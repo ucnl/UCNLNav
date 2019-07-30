@@ -29,7 +29,7 @@ namespace UCNLNav
         public static readonly double PI_DBY_180 = Math.PI / 180.0;
         public static readonly double D180_DBY_PI = 180.0 / Math.PI;
 
-        public static readonly Ellipsoid WGS84Ellipsoid = new Ellipsoid(6378137, 1 / 298.257223563);
+        public static readonly Ellipsoid WGS84Ellipsoid = new Ellipsoid(6378137, 298.257223563);
 
         public static double Deg2Rad(double angle_rad)
         {
