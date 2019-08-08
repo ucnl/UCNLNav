@@ -1,6 +1,6 @@
 # UCNLNav
 
-This library contain routines for:
+This library contains routines for:
 * Solving geodetic problems (Vincenty equations, haversine)
 * Solving navigation & positioning problems (TOA & TDOA)
 
