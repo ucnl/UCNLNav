@@ -1,6 +1,8 @@
 ﻿
 using System;
 using UCNLNav;
+using UCNLNav.VLBL;
+
 namespace UCNLNav_Tests
 {
     class Program
@@ -14,7 +16,7 @@ namespace UCNLNav_Tests
             // actual target location
             double actual_target_lat_deg = 44.12345678; // singed degrees
             double actual_target_lon_deg = 48.12345678; // signed degrees
-            double actual_target_z = 25;                       // meters
+            double actual_target_z = 25;                // meters
             
             double start_dst_projection = 500;          // start distance from target, meters
             double dst_inc_step = 50;                   // distance increment
@@ -48,6 +50,8 @@ namespace UCNLNav_Tests
             GeoPoint3DD[] toaBases = new GeoPoint3DD[bases_number];
             GeoPoint3DT[] tdoaBases = new GeoPoint3DT[bases_number];
 
+
+            #region Vincenty equations testing
 
             Console.WriteLine();
             Console.WriteLine("* Testing Vincenty equations...");
@@ -95,9 +99,12 @@ namespace UCNLNav_Tests
                 az += az_step;
             }
 
-            Console.WriteLine();
-            Console.WriteLine("Press a key to start TOA 2D test...");
+            #endregion
+
+            Console.WriteLine("\r\nPress a key to start TOA 2D test...");
             Console.ReadKey();
+
+            #region TOA_Locate2D testing
 
             Console.WriteLine();
             Console.WriteLine("* Solving a TOA problem with TOA_Locate2D...");
@@ -115,12 +122,14 @@ namespace UCNLNav_Tests
                                        Algorithms.Deg2Rad(target_lat), Algorithms.Deg2Rad(target_lon),
                                        Algorithms.WGS84Ellipsoid, Algorithms.VNC_DEF_EPSILON, Algorithms.VNC_DEF_IT_LIMIT,
                                        out dst_error, out fwd_az_rad, out rev_az_rad, out it_cnt);
-            Console.WriteLine(string.Format("Distance on the ellipsoid between actual target location and calculated: {0:F03} m", dst_error));            
+            Console.WriteLine(string.Format("Distance on the ellipsoid between actual target location and calculated: {0:F03} m", dst_error));
 
-            
-            Console.WriteLine();
-            Console.WriteLine("Press a key to start TDOA test...");
+            #endregion
+
+            Console.WriteLine("\r\nPress a key to start TDOA test...");
             Console.ReadKey();
+
+            #region TDOA_Locate2D testing
 
             Console.WriteLine();
             Console.WriteLine("* Solving a TDOA problem with TDOA_Locate2D...");
@@ -147,11 +156,12 @@ namespace UCNLNav_Tests
                                        out dst_error, out fwd_az_rad, out rev_az_rad, out it_cnt);
             Console.WriteLine(string.Format("Distance on the ellipsoid between actual target location and calculated: {0:F03} m", dst_error));
 
+            #endregion
 
-
-            Console.WriteLine();
-            Console.WriteLine("Press a key to start TOA 3D test...");
+            Console.WriteLine("\r\nPress a key to start TOA 3D test...");
             Console.ReadKey();
+
+            #region TOA_Locate3D testing
 
             Console.WriteLine();
             Console.WriteLine("* Solving a TOA problem with TOA_Locate3D...");
@@ -170,12 +180,93 @@ namespace UCNLNav_Tests
                                        out dst_error, out fwd_az_rad, out rev_az_rad, out it_cnt);
             Console.WriteLine(string.Format("Distance on the ellipsoid between actual target location and calculated: {0:F03} m", dst_error));
 
+            #endregion
+
+            Console.WriteLine("\r\nPress a key to start TDOA 3D test...");
+            Console.ReadKey();
+
+            #region TDOA_Locate3D testing
+
+            Console.WriteLine();
+            Console.WriteLine("* Solving a TDOA problem with TOA_Locate3D...");
+
+            Navigation.TDOA_Locate3D(tdoaBases,
+                                     double.NaN, double.NaN,
+                                     double.NaN,
+                                     Algorithms.NLM_DEF_IT_LIMIT, Algorithms.NLM_DEF_PREC_THRLD, 10,
+                                     Algorithms.WGS84Ellipsoid,
+                                     velocity,
+                                     out target_lat, out target_lon, out target_z, out radialError, out it_cnt);
+
+            Console.WriteLine("LAT: {0:F07}° (Actual {1:F07}°), LON: {2:F07}° (Actual {3:F07}°), DPT: {4:F02} m, Estimated radial error: {4:F03} m, Iterations: {5}",
+               target_lat, actual_target_lat_deg, target_lon, actual_target_lon_deg, radialError, it_cnt);
+
+            Algorithms.VincentyInverse(actual_target_lat_rad, actual_target_lon_rad,
+                                       Algorithms.Deg2Rad(target_lat), Algorithms.Deg2Rad(target_lon),
+                                       Algorithms.WGS84Ellipsoid, Algorithms.VNC_DEF_EPSILON, Algorithms.VNC_DEF_IT_LIMIT,
+                                       out dst_error, out fwd_az_rad, out rev_az_rad, out it_cnt);
+            Console.WriteLine(string.Format("Distance on the ellipsoid between actual target location and calculated: {0:F03} m", dst_error));
+
+            #endregion
 
 
+            Console.WriteLine("\r\nPress a key to start VLBL tests...");
+            Console.ReadKey();
+
+            #region Testing VLBL
+                        
+            int vlbl_fifoSize = 256;
+            int vlbl_baseSize = 3;
+            double vlbl_radialErrorThreshold = 7;
+            double vlbl_simplexSize = 10;
+            GeoPoint3D actual_target_location = new GeoPoint3D(actual_target_lat_deg, actual_target_lon_deg, actual_target_z);
+
+            Console.WriteLine(string.Format("Number of base points: {0}", vlbl_baseSize));
+            Console.WriteLine(string.Format("VLBL FIFO size: {0}", vlbl_fifoSize));
+
+            VLBLCore<VLBLTOAMeasurement> vlblCore = new VLBLCore<VLBLTOAMeasurement>(vlbl_fifoSize, vlbl_baseSize, vlbl_radialErrorThreshold,
+                vlbl_simplexSize, Algorithms.WGS84Ellipsoid);
+            vlblCore.BaseUpdatedEventHandler += (o, e) =>
+                {
+                    Console.WriteLine(string.Format("Base updated, refPoint: {0}", e.ReferencePoint));
+                    Console.WriteLine("Base points:");
+                    foreach (var basePoint in e.BasePoints)
+                    {
+                        Console.WriteLine(basePoint.ToString());
+                    }
+                };
+
+            vlblCore.TargetDepth = actual_target_z;
+
+            vlblCore.ReferencePointUpdatedEventHandler += (o, e) =>
+                {
+                    Console.WriteLine(string.Format("Reference point updated: {0}", vlblCore.ReferencePoint));
+                };
+
+            vlblCore.TargetPositionUpdatedEventHandler += (o, e) =>
+                {
+                    Console.WriteLine(string.Format("Target position updated: {0}, RERR: {1:F03} m, Iterations: {2}", e.TargetPosition, e.RadialError, e.Iterations));
+                    Console.WriteLine(string.Format("Actual target position: {0}", actual_target_location));
+
+                    Algorithms.VincentyInverse(actual_target_lat_rad, actual_target_lon_rad,
+                                       Algorithms.Deg2Rad(e.TargetPosition.Latitude), Algorithms.Deg2Rad(e.TargetPosition.Longitude),
+                                       Algorithms.WGS84Ellipsoid, Algorithms.VNC_DEF_EPSILON, Algorithms.VNC_DEF_IT_LIMIT,
+                                       out dst_error, out fwd_az_rad, out rev_az_rad, out it_cnt);
+                    Console.WriteLine(string.Format("Distance on the ellipsoid between actual target location and calculated: {0:F03} m", dst_error));
+                };
+
+            for (int i = 0; i < bases_number; i++)
+            {
+                Console.WriteLine(string.Format("Adding new base point: {0}", toaBases[i]));
+                vlblCore.AddMeasurement(new VLBLTOAMeasurement(toaBases[i].Latitude, toaBases[i].Longitude, toaBases[i].Depth, toaBases[i].SlantRange));
+            }
+
+            #endregion
 
             Console.WriteLine();
             Console.WriteLine("Press a key to exit...");
-            Console.ReadKey();            
+            Console.ReadKey();
+
         }
     }
 }
