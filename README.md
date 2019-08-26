@@ -7,4 +7,4 @@ This library contains routines for:
 Basic example of usage is in UCNLNav_Tests demo application.
 
 
-## Please, let us know that our work is useful for you: star this repository =)
+### Please, let us know that our work is useful for you: star this repository =)
