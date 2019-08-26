@@ -220,8 +220,6 @@ namespace UCNLNav
             z_m = zBest;
         }
 
-
-
         /// <summary>
         /// Solves TDOA navigation problem: searches for a target location by base points - points with known locations
         /// and measured times of arrival. Nelder-Mead (simplex) method is used.
@@ -273,6 +271,64 @@ namespace UCNLNav
             lat_deg = Algorithms.Rad2Deg(yPrev);
             lon_deg = Algorithms.Rad2Deg(xPrev);
         }
+
+        /// <summary>
+        /// Solves TDOA navigation problem: searches for a target location by base points - points with known locations
+        /// and measured times of arrival. Nelder-Mead (simplex) method is used.
+        /// </summary>
+        /// <param name="bases">A collection of base points</param>
+        /// <param name="lat_prev_deg">Previous location latitude, signed degrees. Set it to NaN if previous location is unknown</param>
+        /// <param name="lon_prev_deg">Previous location longitude, signed degrees. Set it to NaN if previous location is unknown</param>
+        /// <param name="z_m">Previous estimation of Target's depth. Set it to NaN of previos depth is unknown</param>
+        /// <param name="maxIterations">Nelder-Mead iterations limit</param>
+        /// <param name="precisionThreshold">Precision threshold</param>
+        /// <param name="simplexSize">Initial size of simplex, meters</param>
+        /// <param name="el">Reference ellipsoid</param>
+        /// <param name="velocity">Signal propagation velocity, e.g. speed of sound in m/s</param>
+        /// <param name="lat_deg">Found latitude of the target</param>
+        /// <param name="lon_deg">Found longitude of the target</param>
+        /// <param name="radialError">Radial error. Square root from the final value of residual function</param>
+        /// <param name="itCnt">Number of iterations taken</param>
+        public static void TDOA_Locate3D(GeoPoint3DT[] bases,
+                                         double lat_prev_deg, double lon_prev_deg, double prev_z_m,
+                                         int maxIterations, double precisionThreshold, double simplexSize,
+                                         Ellipsoid el,
+                                         double velocity,
+                                         out double lat_deg, out double lon_deg, out double z_m, out double radialError, out int itCnt)
+        {
+            double xPrev = 0;
+            double yPrev = 0;
+            double xBest = 0;
+            double yBest = 0;
+
+            var basesCentroid = GetPointsCentroid2D(bases);
+            var basePoints = ConvertToLCS(bases, basesCentroid, el);
+            var baseLines = BuildBaseLines(basePoints, velocity);
+
+            if (!double.IsNaN(lat_prev_deg) && !double.IsNaN(lon_prev_deg))
+            {
+                Algorithms.GetDeltasByGeopoints(Algorithms.Deg2Rad(basesCentroid.Latitude), Algorithms.Deg2Rad(basesCentroid.Longitude),
+                    Algorithms.Deg2Rad(lat_prev_deg), Algorithms.Deg2Rad(lon_prev_deg), el, out yPrev, out xPrev);
+            }
+            
+            if (double.IsNaN(prev_z_m))
+                prev_z_m = bases[0].Depth;
+
+            Algorithms.TDOA_NLM3D_Solve(baseLines, xPrev, yPrev, prev_z_m,
+                                        maxIterations, precisionThreshold, simplexSize,
+                                        out xBest, out yBest, out z_m, out radialError, out itCnt);
+            
+
+            
+            Algorithms.GeopointOffsetByDeltas(Algorithms.Deg2Rad(basesCentroid.Latitude), Algorithms.Deg2Rad(basesCentroid.Longitude),
+                                              yBest, xBest,
+                                              el,
+                                              out yPrev, out xPrev);
+
+            lat_deg = Algorithms.Rad2Deg(yPrev);
+            lon_deg = Algorithms.Rad2Deg(xPrev);
+        }
+                                        
 
         #endregion
     }

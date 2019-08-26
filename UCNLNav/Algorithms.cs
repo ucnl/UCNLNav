@@ -454,7 +454,7 @@ namespace UCNLNav
 
         #endregion
         
-        #region TOA & TDOA LMS solvers
+        #region TOA & TDOA solvers
        
         /// <summary>
         /// TOA problem residual function
@@ -971,8 +971,7 @@ namespace UCNLNav
                                       maxIterations, precisionThreshold, simplexSize,
                                       out xBest, out yBest, out zBest, out radialError, out itCnt);
         }
-
-
+        
         /// <summary>
         /// Finds the index of the TOABasePoint with smallest D property
         /// </summary>

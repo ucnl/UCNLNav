@@ -30,7 +30,7 @@ namespace UCNLNav
 
         public override string ToString()
         {
-            return string.Format("{0:F06}, {1:F06}", Latitude, Longitude);
+            return string.Format("LAT: {0:F06}°, LON: {1:F06}°", Latitude, Longitude);
         }
 
         #endregion
@@ -58,7 +58,7 @@ namespace UCNLNav
 
         public override string ToString()
         {
-            return string.Format("{0}, {1:F03}", base.ToString(), Depth);
+            return string.Format("{0}, DPT: {1:F03} m", base.ToString(), Depth);
         }
 
         #endregion
@@ -86,7 +86,7 @@ namespace UCNLNav
 
         public override string ToString()
         {
-            return string.Format("{0}, {1:F03}", base.ToString(), SlantRange);
+            return string.Format("{0}, SRNG: {1:F03} m", base.ToString(), SlantRange);
         }
 
         #endregion
@@ -114,11 +114,39 @@ namespace UCNLNav
 
         public override string ToString()
         {
-            return string.Format("{0}, {1:F03}", base.ToString(), TOASec);
+            return string.Format("{0}, TOA: {1:F06} sec", base.ToString(), TOASec);
         }
 
         #endregion
-    }  
+    }
+
+    public class GeoPoint3DTm : GeoPoint3D
+    {
+        #region Properties
+
+        public DateTime TimeStamp;
+
+        #endregion
+
+        #region Constructor
+
+        public GeoPoint3DTm(double lat, double lon, double dpt, DateTime timeStamp)
+            : base(lat, lon, dpt)
+        {
+            TimeStamp = timeStamp;
+        }
+
+        #endregion
+
+        #region Methods
+
+        public override string ToString()
+        {
+            return string.Format("{0}, TS: {1}", base.ToString(), TimeStamp.ToShortTimeString());
+        }
+
+        #endregion
+    }
 
     public struct TOABasePoint
     {

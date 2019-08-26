@@ -39,7 +39,14 @@
     <Compile Include="Algorithms.cs" />
     <Compile Include="GeoPoints.cs" />
     <Compile Include="Navigation.cs" />
+    <Compile Include="PositioningCore2D.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities.cs" />
+    <Compile Include="VLBL\IVLBLMeasurement.cs" />
+    <Compile Include="VLBL\VLBLCore.cs" />
+    <Compile Include="VLBL\VLBLMeasurements.cs" />
+    <Compile Include="VLBL\VLBLTDOAMeasurement.cs" />
+    <Compile Include="VLBL\VLBLTOAMeasurement.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
