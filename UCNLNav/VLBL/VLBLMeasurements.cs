@@ -3,6 +3,14 @@ using System.Collections.Generic;
 
 namespace UCNLNav.VLBL
 {
+    /// <summary>
+    /// VLBL base management algorithms accoring to
+    /// A.Dikarev, S.Dmitriev, V. Kubkin, A. Vasilenko 
+    /// "Position estimation of autonomous underwater sensors using the virtual long baseline method"
+    /// International Journal Of Wireless & Mobile Networks (IJWMN) Vol. 11, No. 2, April 2019
+    /// http://aircconline.com/ijwmn/V11N2/11219ijwmn02.pdf
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class VLBLMeasurements<T> where T : GeoPoint3D, IVLBLMeasurement
     {
         #region Properties
