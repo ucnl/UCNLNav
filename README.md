@@ -1,5 +1,11 @@
 # UCNLNav
 
+## WARNING!
+
+If this repository achieves 50 stars we'll add AoA (Angle of arrival)  
+estimation routines.
+
+
 This library contains routines for:
 * Solving geodetic problems (Vincenty equations, haversine)
 * Solving navigation & positioning problems (TOA & TDOA)
