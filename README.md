@@ -4,9 +4,9 @@
 
 If this repository achieves:
 
-50 stars - we'll add AoA (Angle of arrival) estimation routines
-100 stars - we'll add C implementation of the library
-150 stars - we'll add complete documentation for the library
+50 stars - we'll add AoA (Angle of arrival) estimation routines  
+100 stars - we'll add C implementation of the library  
+150 stars - we'll add complete documentation for the library  
 
 This library contains routines for:
 * Solving geodetic problems (Vincenty equations, haversine)
