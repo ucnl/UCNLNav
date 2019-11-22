@@ -2,6 +2,74 @@
 using System;
 namespace UCNLNav
 {
+    /// <summary>
+    /// Metric point 2D
+    /// </summary>
+    public class MPoint
+    {
+        #region Properties
+
+        public double X;
+        public double Y;        
+
+        #endregion
+
+        #region Constructor
+
+        public MPoint()
+            : this(0, 0)
+        {
+        }
+
+        public MPoint(double x, double y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        #endregion
+
+        #region Methods
+
+        public override string ToString()
+        {
+            return string.Format("X: {0:F06}, Y: {1:F06}", X, Y);
+        }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// Metric point 3D
+    /// </summary>
+    public class MPoint3D : MPoint
+    {
+        #region Properties
+
+        public double Z;
+
+        #endregion
+
+        #region Constructor
+
+        public MPoint3D(double x, double y, double z)
+            : base(x, y)
+        {
+            Z = z;
+        }
+
+        #endregion
+
+        #region Methods
+
+        public override string ToString()
+        {
+            return string.Format("{0}, Z: {1:F06}", base.ToString(), Z);
+        }
+
+        #endregion
+    }
+
     public class GeoPoint
     {
         #region Properties

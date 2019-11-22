@@ -1,18 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace UCNLNav
 {
     public static class Navigation
-    {     
+    {
+        
         #region Methods
 
         /// <summary>
-        /// Calculates the centroid of a cloud of points
+        /// Calculates the centroid of a cloud of points      
         /// </summary>
         /// <param name="points">Cloud of points</param>
         /// <returns>The centroid of the specified cloud of points</returns>
         public static GeoPoint GetPointsCentroid2D(IEnumerable<GeoPoint> points)
-        {
+        {            
             double cLat = 0.0;
             double cLon = 0.0;
             int cnt = 0;
@@ -24,9 +26,219 @@ namespace UCNLNav
                 cnt++;
             }
 
-            return new GeoPoint(cLat / cnt, cLon / cnt);
+            if (cnt > 0)
+            {
+                return new GeoPoint(cLat / cnt, cLon / cnt);
+            }
+            else
+            {
+                return new GeoPoint();
+            }
         }
 
+        public static MPoint GetPointsCentroid2D(IEnumerable<MPoint> points)
+        {
+            double cx = 0.0;
+            double cy = 0.0;
+            int cnt = 0;
+
+            foreach (var point in points)
+            {
+                cx += point.X;
+                cy += point.Y;
+                cnt++;
+            }
+
+            if (cnt > 0)
+            {
+                return new MPoint(cx / cnt, cy / cnt);
+            }
+            else
+            {
+                return new MPoint();
+            }
+        }
+
+        public static MPoint3D GetPointsCentroid3D(IEnumerable<MPoint3D> points)
+        {
+            double cx = 0.0;
+            double cy = 0.0;
+            double cz = 0.0;
+            int cnt = 0;
+
+            foreach (var point in points)
+            {
+                cx += point.X;
+                cy += point.Y;
+                cz += point.Z;
+                cnt++;
+            }
+
+            if (cnt > 0)
+            {
+                return new MPoint3D(cx / cnt, cy / cnt, cz / cnt);
+            }
+            else
+            {
+                return new MPoint3D(0, 0, 0);
+            }
+        }
+
+
+        public static void GetPointsSTD2D(IEnumerable<MPoint> points, out double sigmax, out double sigmay)
+        {
+            sigmax = 0.0;
+            sigmay = 0.0;
+            int cnt = 0;
+
+            var centroid = GetPointsCentroid2D(points);
+
+            foreach (var point in points)
+            {
+                sigmax += Math.Pow(point.X - centroid.X, 2);
+                sigmay += Math.Pow(point.Y - centroid.Y, 2);
+                cnt++;
+            }
+
+            if (cnt > 0)
+            {
+                sigmax /= cnt;
+                sigmay /= cnt;
+            }            
+        }
+
+        public static void GetPointsSTD3D(IEnumerable<MPoint3D> points, out double sigmax, out double sigmay, out double sigmaz)
+        {
+            sigmax = 0.0;
+            sigmay = 0.0;
+            sigmaz = 0.0;
+            int cnt = 0;
+
+            var centroid = GetPointsCentroid3D(points);
+
+            foreach (var point in points)
+            {
+                sigmax += Math.Pow(point.X - centroid.X, 2);
+                sigmay += Math.Pow(point.Y - centroid.Y, 2);
+                sigmaz += Math.Pow(point.Z - centroid.Z, 2);
+                cnt++;
+            }
+
+            if (cnt > 0)
+            {
+                sigmax /= cnt;
+                sigmay /= cnt;
+                sigmaz /= cnt;
+            }
+        }
+
+
+        /// <summary>
+        /// Converts geographic coordinates to local cartesian coordinates
+        /// </summary>
+        /// <param name="points">Geographic points</param>
+        /// <param name="el">Reference ellipsoid</param>
+        /// <returns>List of MPoints in cartesian coordinates system, which center is in the centroid on specifief points</returns>
+        public static List<MPoint> GCSToLCS(IEnumerable<GeoPoint> points, Ellipsoid el)
+        {
+            List<MPoint> result = new List<MPoint>();
+            var centroid = GetPointsCentroid2D(points);            
+
+            double cLat = Algorithms.Deg2Rad(centroid.Latitude);
+            double cLon = Algorithms.Deg2Rad(centroid.Longitude);
+            double d_lat_m, d_lon_m;
+
+            foreach (var point in points)
+            {
+                Algorithms.GetDeltasByGeopoints(cLat, cLon, 
+                    Algorithms.Deg2Rad(point.Latitude), Algorithms.Deg2Rad(point.Longitude),
+                    el, 
+                    out d_lat_m, out d_lon_m);
+
+                result.Add(new MPoint(d_lon_m, d_lat_m));
+            }
+
+            return result;
+        }
+
+        public static List<GeoPoint> LCSToGCS(IEnumerable<MPoint> points, GeoPoint centroid, Ellipsoid el)
+        {
+            List<GeoPoint> result = new List<GeoPoint>();
+
+            double cLat = Algorithms.Deg2Rad(centroid.Latitude);
+            double cLon = Algorithms.Deg2Rad(centroid.Longitude);
+            double eLat = 0;
+            double eLon = 0;
+
+            foreach (var point in points)
+            {
+                Algorithms.GeopointOffsetByDeltas(cLat, cLon, point.Y, point.X, el, out eLat, out eLon);
+                result.Add(new GeoPoint(eLat, eLon));
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// Calculates the Distance Root Mean Squared (DRMS) of the specified
+        /// standard errors.
+        /// DRMS -> 65% probability
+        /// 2DRMS -> 95% probability
+        /// 3DRMS -> 98% probability
+        /// </summary>
+        /// <param name="sigmax">Standard error of estimates X coordinate</param>
+        /// <param name="sigmay">Standard error of estimates Y coordinate</param>
+        /// <returns>The Distance Root Mean Squared of specified standard errors</returns>
+        public static double DRMS(double sigmax, double sigmay)
+        {
+            return Math.Sqrt(sigmax * sigmax + sigmay * sigmay);
+        }
+
+        /// <summary>
+        /// Calculates the the Circular Error Probability - the radius of circle centered at the true position,
+        /// containing the position estimate with probability of 50%
+        /// </summary>
+        /// <param name="sigmax">Standard error of estimates X coordinate</param>
+        /// <param name="sigmay">Standard error of estimates Y coordinate</param>
+        /// <returns>The Circular Error Probability of specified standard errors</returns>
+        public static double CEP(double sigmax, double sigmay)
+        {
+            return 0.62 * sigmay + 0.56 * sigmax;            
+        }
+
+        /// <summary>
+        /// Calculates Spherical Error Probability - the radius of the sphere
+        /// centered at the true position, containing the position estimate in 3D
+        /// with probability of 50%
+        /// </summary>
+        /// <param name="sigmax">Standard error of estimates X coordinate</param>
+        /// <param name="sigmay">Standard error of estimates Y coordinate</param>
+        /// <param name="sigmaz">Standard error of estimates Z coordinate</param>
+        /// <returns>The Spherical Error Probability of specified standard errors</returns>
+        public static double SEP(double sigmax, double sigmay, double sigmaz)
+        {
+            return 0.51 * (sigmay + sigmax + sigmaz);
+        }
+
+        /// <summary>
+        /// Calculates the Mean Radial Spherical Error - the radius of sphere
+        /// centered at the true position, containing the position estimate in 3D
+        /// with probability of 61%
+        /// </summary>
+        /// <param name="sigmax">Standard error of estimates X coordinate</param>
+        /// <param name="sigmay">Standard error of estimates Y coordinate</param>
+        /// <param name="sigmaz">Standard error of estimates Z coordinate</param>
+        /// <returns>The Mean Radial Spherical Error of specified standard errors</returns>
+        public static double MRSE(double sigmax, double sigmay, double sigmaz)
+        {
+            return Math.Sqrt(sigmax * sigmax + sigmay * sigmay + sigmaz * sigmaz);
+        }
+
+
+
+               
+        
         /// <summary>
         /// Converts array of GeoPoint3DD to an array of TOABasePoints, converts lat/lon to metric local CS whose center is in specified centroid
         /// </summary>
@@ -328,7 +540,6 @@ namespace UCNLNav
             lat_deg = Algorithms.Rad2Deg(yPrev);
             lon_deg = Algorithms.Rad2Deg(xPrev);
         }
-                                        
 
         #endregion
     }
