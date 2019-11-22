@@ -15,6 +15,12 @@ This library contains routines for:
 
 Basic example of usage is in UCNLNav_Tests demo application.
 
+22-NOV-2019 Update:  
+* In GeoPoints.cs new classes for metric point (MPoint and MPoint3D)  
+* In Navigation.cs new methods for calculating centroids of clouds of MPoint and MPoint3D, 
+converting between local and geographic coordinate systems, methods for calculating statistics (CEP, SEP, STD, MRSE, DRMS)
+
+
 26-AUG-2019 Update:  
 * Routines for VLBL (Virtual long baseline) positioning
 * TDOA solution in 3D
