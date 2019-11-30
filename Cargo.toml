@@ -1,7 +1,0 @@
-[package]
-name = "ucnlnav"
-version = "0.1.0"
-authors = ["AlekUnderwater <aleksandr.v.dikarev@gmail.com>"]
-edition = "2018"
-
-[dependencies]
