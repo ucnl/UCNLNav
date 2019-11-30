@@ -15,6 +15,12 @@ This library contains routines for:
 
 Basic example of usage is in UCNLNav_Tests demo application.
 
+
+30-NOV-2019 Update:
+* Added partial implementation of the library in Rust:
+- All the functionality from Algorithms.cs (TOA/TDOA not covered with tests yet)
+
+
 22-NOV-2019 Update:  
 * In GeoPoints.cs new classes for metric point (MPoint and MPoint3D)  
 * In Navigation.cs new methods for calculating centroids of clouds of MPoint and MPoint3D, 
