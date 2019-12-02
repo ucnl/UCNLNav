@@ -764,7 +764,7 @@ macro_rules! assert_approx_eq {
         assert!(
             (*a - *b).abs() < eps,
             "assertion failed \
-             (l_op: `{:?}`, r_op: `{:?}`, eps: `{:?}`, real diff: `{:?}`)",
+             (left: `{:?}`, right: `{:?}`, eps: `{:?}`, real diff: `{:?}`)",
             *a,
             *b,
             eps,
@@ -1278,46 +1278,68 @@ mod tests {
         assert!(result.3 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", result.3);
     }   
 
-    // 3D solutions - not completed!
     #[test]
     fn test_toa_nlm_3d_solve_no_noise() {
 
         let mut base_points = Vec::new();
     
         // random relevant values for actual point position
-        let actual_x = 10.0;
-        let actual_y = 10.0;
-        let actual_z = 10.0;
+        let actual_x = 20.0;
+        let actual_y = -20.0;
+        let actual_z = 20.0;
 
         let mut x_prev = 0.0;
         let mut y_prev = 0.0;
         let mut z_prev = 0.0;
-            
-        let x = -100.0;
-        let y = 150.0;
-        let z = -100.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});            
 
-        let x = 150.0;
-        let y = 100.0;
-        let z = 100.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
-        
-        let x = 100.0;
-        let y = -150.0;
-        let z = -100.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
-        
-        let x = -100.0;
-        let y = -150.0;
-        let z = 100.0;
+        let x = -60.0;
+        let y = 20.0;
+        let z = 10.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
         base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
 
-       
+        let x = -20.0;
+        let y = 60.0;
+        let z = 15.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+    
+        let x = 20.0;
+        let y = 60.0;
+        let z = 20.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+    
+        let x = 40.0;
+        let y = 10.0;
+        let z = 25.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        
+        let x = 50.0;
+        let y = -20.0;
+        let z = 30.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+
+        let x = 30.0;
+        let y = -50.0;
+        let z = 35.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+
+        let x = -20.0;
+        let y = -40.0;
+        let z = 35.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+
+        let x = -50.0;
+        let y = -20.0;
+        let z = 40.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+                       
         for base_point in &base_points {
             x_prev += base_point.x;
             y_prev += base_point.y;
@@ -1331,59 +1353,103 @@ mod tests {
                 
         let result = toa_nlm_3d_solve(&base_points, x_prev, y_prev, z_prev, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0);
 
-        assert_approx_eq!(result.0, actual_x, 5.0);
-        assert_approx_eq!(result.1, actual_y, 5.0);
-        assert_approx_eq!(result.2, actual_z, 5.0);
+        assert_approx_eq!(result.0, actual_x, 1.0);
+        assert_approx_eq!(result.1, actual_y, 1.0);
+        assert_approx_eq!(result.2, actual_z, 1.0);
         
-        assert!(result.3 < 10.0, "Residual function greater than limit: {}", result.3);
+        assert!(result.3 < 1.0, "Residual function greater than limit: {}", result.3);
         assert!(result.4 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", result.4);
     }
 
     #[test]
     fn test_tdoa_nlm_3d_solve_no_noise() {
 
-        let mut base_lines = Vec::new();
-                    
+        let mut base_lines = Vec::new();                    
+        let mut base_points = Vec::new();
+    
         // random relevant values for actual point position
-        let actual_x = 10.0;
-        let actual_y = 10.0;
-        let actual_z = 10.0;           
-                           
-        let x1 = -100.0;
-        let y1 = 150.0;
-        let z1 = 100.0;        
-        let d1 = dist_3d(x1, y1, z1, actual_x, actual_y, actual_z);
-        let x2 = 150.0;
-        let y2 = 100.0;
-        let z2 = 100.0;        
-        let d2 = dist_3d(x2, y2, z2, actual_x, actual_y, actual_z);
-        let x3 = 100.0;
-        let y3 = -150.0;
-        let z3 = -100.0;        
-        let d3 = dist_3d(x3, y3, z3, actual_x, actual_y, actual_z);                
-        let x4 = -150.0;
-        let y4 = -100.0;
-        let z4 = -100.0;        
-        let d4 = dist_3d(x4, y4, z4, actual_x, actual_y, actual_z);        
+        let actual_x = 20.0;
+        let actual_y = -20.0;
+        let actual_z = 20.0;
 
-        base_lines.push(TDOABaseline { x1: x1, y1: y1, z1: z1, x2: x2, y2: y2, z2: z2, prd: d1 - d2 });
-        base_lines.push(TDOABaseline { x1: x1, y1: y1, z1: z1, x2: x3, y2: y3, z2: z3, prd: d1 - d3 });
-        base_lines.push(TDOABaseline { x1: x1, y1: y1, z1: z1, x2: x4, y2: y4, z2: z4, prd: d1 - d4 });
-        base_lines.push(TDOABaseline { x1: x2, y1: y2, z1: z2, x2: x3, y2: y3, z2: z3, prd: d2 - d3 });
-        base_lines.push(TDOABaseline { x1: x2, y1: y2, z1: z2, x2: x4, y2: y4, z2: z4, prd: d2 - d4 });        
-        base_lines.push(TDOABaseline { x1: x3, y1: y3, z1: z3, x2: x4, y2: y4, z2: z4, prd: d3 - d4 });
+        let mut x_prev = 0.0;
+        let mut y_prev = 0.0;
+        let mut z_prev = 0.0;
 
-        let x_prev = (x1 + x2 + x3 + x4) / 4.0;
-        let y_prev = (y1 + y2 + y3 + y4) / 4.0;
-        let z_prev = (z1 + z2 + z3 + z4) / 4.0;
+        let x = -60.0;
+        let y = 20.0;
+        let z = 10.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+
+        let x = -20.0;
+        let y = 60.0;
+        let z = 15.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+    
+        let x = 20.0;
+        let y = 60.0;
+        let z = 20.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+    
+        let x = 40.0;
+        let y = 10.0;
+        let z = 25.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
         
+        let x = 50.0;
+        let y = -20.0;
+        let z = 30.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+
+        let x = 30.0;
+        let y = -50.0;
+        let z = 35.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+
+        let x = -20.0;
+        let y = -40.0;
+        let z = 35.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+
+        let x = -50.0;
+        let y = -20.0;
+        let z = 40.0;
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
+        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+                       
+        for base_point in &base_points {
+            x_prev += base_point.x;
+            y_prev += base_point.y;
+            z_prev += base_point.z;
+        }
+
+        x_prev /= base_points.len() as f64;
+        y_prev /= base_points.len() as f64;
+        z_prev /= base_points.len() as f64;
+
+        for i in 0..base_points.len() - 1 {
+            for j in i..base_points.len() {
+                base_lines.push(TDOABaseline { x1: base_points[i].x, y1: base_points[i].y, z1: base_points[i].z,
+                                               x2: base_points[j].x, y2: base_points[j].y, z2: base_points[j].z,
+                                               prd: base_points[i].d - base_points[j].d });
+            }
+        }        
+
+                
         let result = tdoa_nlm_3d_solve(&base_lines, x_prev, y_prev, z_prev, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0);
 
-        assert_approx_eq!(result.0, actual_x, 30.0);
-        assert_approx_eq!(result.1, actual_y, 30.0);
-        assert_approx_eq!(result.2, actual_z, 30.0);
+        assert_approx_eq!(result.0, actual_x, 1.0);
+        assert_approx_eq!(result.1, actual_y, 1.0);
+        assert_approx_eq!(result.2, actual_z, 1.0);
         
-        assert!(result.3 < 30.0, "Residual function greater than limit: {}", result.3);
+        assert!(result.3 < 1.0, "Residual function greater than limit: {}", result.3);
         assert!(result.4 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", result.4);
     }   
 }
