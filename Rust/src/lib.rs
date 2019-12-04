@@ -1,39 +1,55 @@
 use std::f64;
 use std::f64::consts;
 
-const PI2               : f64 = 2.0 * consts::PI;
-const PI_DBY_180        : f64 = consts::PI / 180.0;
-const D180_DBY_PI       : f64 = 180.0 / consts::PI;
+const PI2                   : f64 = 2.0 * consts::PI;
+const PI_DBY_180            : f64 = consts::PI / 180.0;
+const D180_DBY_PI           : f64 = 180.0 / consts::PI;
 
+/// Default iterations limit for Vincenty's formulas evaluation
 pub const VNC_DEF_IT_LIMIT  : i32 = 2000;
+
+/// Default precision threhsold for Vincenty's formulas evaluation
 pub const VNC_DEF_EPSILON   : f64 = 1E-12;
 
-const NLM_A             : f64 = 1.0;
-const NLM_B             : f64 = 0.5;
-const NLM_R             : f64 = 0.5;
-const NLM_Q             : f64 = 0.5;
-const NLM_G             : f64 = 2.0;
+const NLM_A                 : f64 = 1.0;
+const NLM_B                 : f64 = 0.5;
+const NLM_R                 : f64 = 0.5;
+const NLM_Q                 : f64 = 0.5;
+const NLM_G                 : f64 = 2.0;
 
-const NLM_DEF_IT_LIMIT  : i32 = 1200;
-const NLM_DEF_PREC_THRLD: f64 = 1E-8;
+/// Default iterations limit for Nelder-Mead (Simplex) optimization algorithm
+pub const NLM_DEF_IT_LIMIT  : i32 = 1200;
+
+/// Default precision threhsold for Nelder-Mead (Simplex) optimization algorithm
+pub const NLM_DEF_PREC_THRLD: f64 = 1E-8;
 
 
+/// Structure to store two main ellipsoid parameters: Major semi-axis and inverse flattening
 pub struct EllipsoidDescriptor {
+    /// Major semi-axis
     mjsa_m: f64,
+    /// Inverse flattening
     ifltn: f64,
 }
 
+/// Structure to store extended list of an ellipsoid parameters 
 pub struct Ellipsoid {
-    mjsa_m: f64,  /* major semi-axis */
-    ifltn: f64,   /* inverse flattening */
-    
-    fltn: f64,    /* flattening */  
-    mnsa_m: f64,  /* minor semi-axis */      
-    ecnt: f64,    /* eccentricity */
-    ecnt_sq: f64, /* eccentricity squared */   
+    /// Major semi-axis
+    mjsa_m: f64,
+    /// Inverse flattening
+    ifltn: f64,
+    /// Flattening
+    fltn: f64,
+    /// Minor semi-axis
+    mnsa_m: f64,
+    /// Eccenticity
+    ecnt: f64,    
+    /// Eccentricity squared
+    ecnt_sq: f64,
 } 
 
 impl Ellipsoid {    
+    /// Builds an Ellipsoid structure from major semi-axis and inverse flattening values
     pub fn new(mjsa_m: f64, ifltn: f64) -> Ellipsoid {
         
         if mjsa_m <= 0.0 {
@@ -56,19 +72,39 @@ impl Ellipsoid {
             ecnt_sq: ecnt.powi(2),
         }
     }
+    /// Builds an Ellipsoid structure from an EllipsoidDescriptor structure
     pub fn from_descriptor(ed: &EllipsoidDescriptor) -> Ellipsoid {
         Ellipsoid::new(ed.mjsa_m, ed.ifltn)        
     }
 }
 
+
+/// Residual function for Nelder-Mead (simplex) optimizer
+pub type Eps3dFunc<T> = fn(&Vec<T>, f64, f64, f64) -> f64;
+
+/// Standard WGS72 Ellipsoid
 pub const WGS72_ELLIPSOID_DESCRIPTOR: EllipsoidDescriptor = EllipsoidDescriptor{ mjsa_m: 6378135.0, ifltn: 298.26 };
+/// Standard WGS84 Ellipsoid
 pub const WGS84_ELLIPSOID_DESCRIPTOR: EllipsoidDescriptor = EllipsoidDescriptor{ mjsa_m: 6378137.0, ifltn: 298.257223563 };
+/// Standard GRS80 Ellipsoid
 pub const GRS80_ELLIPSOID_DESCRIPTOR: EllipsoidDescriptor = EllipsoidDescriptor{ mjsa_m: 6378137.0, ifltn: 298.257222100882711 };
+/// Standard PZ90 Ellipsoid
 pub const PZ90_ELLIPSOID_DESCRIPTOR: EllipsoidDescriptor = EllipsoidDescriptor{ mjsa_m: 6378136.0, ifltn: 298.257839303 };
+/// Standard IERS Ellipsoid
 pub const IERS_ELLIPSOID_DESCRIPTOR: EllipsoidDescriptor = EllipsoidDescriptor{ mjsa_m: 6378136.49, ifltn: 298.25645 };
+/// Standard KRSY Ellipsoid
 pub const KRSY_ELLIPSOID_DESCRIPTOR: EllipsoidDescriptor = EllipsoidDescriptor{ mjsa_m: 6378245.0, ifltn: 298.3 };
 
-
+/// Wraps specified 'value' around specified 'bound'
+/// 'bound' should be grater than zero
+/// 
+/// # Examples
+/// ```
+/// use ucnlnav::*;
+/// let val1 = wrap(11.2, 10.0);  // returns 1.2
+/// let val2 = wrap(-11.2, 10.0); // returns -1.2
+/// ```
+/// 
 pub fn wrap(value: f64, bound: f64) -> f64 {
     if bound <= 0.0 {
         panic!("Specified 'bound' value should be greater than zero");
@@ -84,10 +120,12 @@ pub fn wrap(value: f64, bound: f64) -> f64 {
     (vl * sign)
 }
 
+/// Wraps specified 'valuee' around 2pi
 pub fn wrap_2pi(value: f64) -> f64 {
     wrap(value, PI2)
 }
 
+/// Returns 1 degree of latitude length in meters on the specifiedd latitude and ellipsoid
 pub fn lat_1deg_length(lat_rad: f64, el: &Ellipsoid) -> f64 {
     if el.mjsa_m <= 0.0 {
         panic!("Specified ellipsoid's major semiaxis (mjsa_m) should be greater than zero");
@@ -99,6 +137,7 @@ pub fn lat_1deg_length(lat_rad: f64, el: &Ellipsoid) -> f64 {
     (PI_DBY_180 * el.mjsa_m * (1.0 - el.ecnt_sq) / (1.0 - el.ecnt_sq * lat_rad.sin().powi(2)).powf(1.5)).abs()
 }
            
+/// Returns 1 degree of longitude length in meters on the specifiedd latitude and ellipsoid
 pub fn lon_1deg_length(lat_rad: f64, el: &Ellipsoid) -> f64 {
     if el.mjsa_m <= 0.0 {
         panic!("Specified ellipsoid's major semiaxis (mjsa_m) should be greater than zero");
@@ -303,50 +342,30 @@ pub fn vincenty_direct(sp_lat_rad: f64, sp_lon_rad: f64, fwd_az_rad: f64, dst_m:
 }
 
 
-
-pub struct TOABasePoint {
-    x: f64,
-    y: f64,
-    z: f64,
-    d: f64,
-}   
-
-pub struct TDOABaseline {
-    x1: f64,
-    y1: f64,
-    z1: f64,
-    x2: f64,
-    y2: f64,
-    z2: f64,
-    prd: f64, // Pseudorange difference    
-}
-
-pub type Eps3dFunc<T> = fn(&Vec<T>, f64, f64, f64) -> f64;
-
-pub fn eps_toa3d(base_points: &Vec<TOABasePoint>, x: f64, y: f64, z: f64) -> f64 {
+pub fn eps_toa3d(base_points: &Vec<(f64, f64, f64, f64)>, x: f64, y: f64, z: f64) -> f64 {
     
     let mut result: f64 = 0.0;
     
     for base_point in base_points {
-        result += (((base_point.x - x).powi(2) +
-                    (base_point.y - y).powi(2) +
-                    (base_point.z - z).powi(2)).sqrt() - base_point.d).powi(2);
+        result += (((base_point.0 - x).powi(2) +
+                    (base_point.1 - y).powi(2) +
+                    (base_point.2 - z).powi(2)).sqrt() - base_point.3).powi(2);
     }
 
     result
 }
  
-pub fn eps_tdoa3d(base_lines: &Vec<TDOABaseline>, x: f64, y: f64, z: f64) -> f64 {
+pub fn eps_tdoa3d(base_lines: &Vec<(f64, f64, f64, f64, f64, f64, f64)>, x: f64, y: f64, z: f64) -> f64 {
 
     let mut result: f64 = 0.0;
     
     for base_line in base_lines {
-        result += (((base_line.x1 - x).powi(2) +
-                    (base_line.y1 - y).powi(2) +
-                    (base_line.z1 - z).powi(2)).sqrt() -                  
-                   ((base_line.x2 - x).powi(2) +
-                    (base_line.y2 - y).powi(2) +
-                    (base_line.z2 - z).powi(2)).sqrt() - base_line.prd).powi(2);        
+        result += (((base_line.0 - x).powi(2) +
+                    (base_line.1 - y).powi(2) +
+                    (base_line.2 - z).powi(2)).sqrt() -                  
+                   ((base_line.3 - x).powi(2) +
+                    (base_line.4 - y).powi(2) +
+                    (base_line.5 - z).powi(2)).sqrt() - base_line.6).powi(2);        
     }
 
     result
@@ -663,39 +682,40 @@ pub fn nlm_3d_solve<T>(eps: Eps3dFunc<T>, base_elements: &Vec<T>, x_prev: f64, y
 }
 
                                                             
-pub fn toa_nlm_2d_solve(base_points: &Vec<TOABasePoint>, x_prev: f64, y_prev: f64, z: f64,
+pub fn toa_nlm_2d_solve(base_points: &Vec<(f64, f64, f64, f64)>, x_prev: f64, y_prev: f64, z: f64,
     max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, i32) {
-    nlm_2d_solve::<TOABasePoint>(eps_toa3d, base_points, x_prev, y_prev, z, max_iterations, precision_threshold, simplex_size)    
+    nlm_2d_solve::<(f64, f64, f64, f64)>(eps_toa3d, base_points, x_prev, y_prev, z, max_iterations, precision_threshold, simplex_size)    
+}
+
+
+
+pub fn tdoa_nlm_2d_solve(base_lines: &Vec<(f64, f64, f64, f64, f64, f64, f64)>,  x_prev: f64, y_prev: f64, z: f64,
+    max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, i32) {
+    nlm_2d_solve::<(f64, f64, f64, f64, f64, f64, f64)>(eps_tdoa3d, base_lines, x_prev, y_prev, z, max_iterations, precision_threshold, simplex_size)       
+}
+       
+pub fn toa_nlm_3d_solve(base_points: &Vec<(f64, f64, f64, f64)>, x_prev: f64, y_prev: f64, z_prev: f64,
+    max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, f64, i32) {
+
+    nlm_3d_solve::<(f64, f64, f64, f64)>(eps_toa3d, base_points, x_prev, y_prev, z_prev, max_iterations, precision_threshold, simplex_size)
+}
+
+pub fn tdoa_nlm_3d_solve(base_lines: &Vec<(f64, f64, f64, f64, f64, f64, f64)>,  x_prev: f64, y_prev: f64, z_prev: f64,
+    max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, f64, i32) {
+
+    nlm_3d_solve::<(f64, f64, f64, f64, f64, f64, f64)>(eps_tdoa3d, base_lines, x_prev, y_prev, z_prev, max_iterations, precision_threshold, simplex_size)
 }
 
 
 // TODO: tests for routines below
-
-pub fn tdoa_nlm_2d_solve(base_lines: &Vec<TDOABaseline>,  x_prev: f64, y_prev: f64, z: f64,
-    max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, i32) {
-    nlm_2d_solve::<TDOABaseline>(eps_tdoa3d, base_lines, x_prev, y_prev, z, max_iterations, precision_threshold, simplex_size)       
-}
-       
-pub fn toa_nlm_3d_solve(base_points: &Vec<TOABasePoint>, x_prev: f64, y_prev: f64, z_prev: f64,
-    max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, f64, i32) {
-
-    nlm_3d_solve::<TOABasePoint>(eps_toa3d, base_points, x_prev, y_prev, z_prev, max_iterations, precision_threshold, simplex_size)
-}
-
-pub fn tdoa_nlm_3d_solve(base_lines: &Vec<TDOABaseline>,  x_prev: f64, y_prev: f64, z_prev: f64,
-    max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, f64, i32) {
-
-    nlm_3d_solve::<TDOABaseline>(eps_tdoa3d, base_lines, x_prev, y_prev, z_prev, max_iterations, precision_threshold, simplex_size)
-}
-
-pub fn get_nearest_item_index(base_points: &Vec<TOABasePoint>) -> usize {
+pub fn get_nearest_item_index(base_points: &Vec<(f64, f64, f64, f64)>) -> usize {
 
     let mut nrst_idx = 0;
     let mut min_dst: f64 = f64::MIN;
 
     for (idx, base_point) in base_points.iter().enumerate() {
-        if base_point.d < min_dst {
-            min_dst = base_point.d;
+        if base_point.3 < min_dst {
+            min_dst = base_point.3;
             nrst_idx = idx;
         }
     }
@@ -703,7 +723,7 @@ pub fn get_nearest_item_index(base_points: &Vec<TOABasePoint>) -> usize {
     nrst_idx
 }
 
-pub fn toa_circles_intersection_solve(base_points: &Vec<TOABasePoint>, anchor_x: f64, anchor_y: f64, radius: f64, z: f64,
+pub fn toa_circles_intersection_solve(base_points: &Vec<(f64, f64, f64, f64)>, anchor_x: f64, anchor_y: f64, radius: f64, z: f64,
                             arc_mid_rad: f64, arc_angle_rad: f64, steps: i32) -> f64 {
 
     let mut a: f64 = arc_mid_rad - arc_angle_rad / 2.0;
@@ -731,13 +751,13 @@ pub fn toa_circles_intersection_solve(base_points: &Vec<TOABasePoint>, anchor_x:
     a_best
 }
 
-pub fn toa_circles_1d_solve(base_points: &Vec<TOABasePoint>, z: f64, end_arc_angle_rad: f64, steps: i32, arc_angle_decrease_factor: f64) -> (f64, f64, f64) {                
+pub fn toa_circles_1d_solve(base_points: &Vec<(f64, f64, f64, f64)>, z: f64, end_arc_angle_rad: f64, steps: i32, arc_angle_decrease_factor: f64) -> (f64, f64, f64) {                
     let nrst_idx = get_nearest_item_index(base_points);
-    let d_z: f64 = (base_points[nrst_idx].z - z).abs();
-    let radius: f64 = if base_points[nrst_idx].d < d_z { 0.0 } else { (base_points[nrst_idx].d.powi(2) - d_z.powi(2)).sqrt() };
+    let d_z: f64 = (base_points[nrst_idx].2 - z).abs();
+    let radius: f64 = if base_points[nrst_idx].3 < d_z { 0.0 } else { (base_points[nrst_idx].3.powi(2) - d_z.powi(2)).sqrt() };
     
-    let anchor_x: f64 = base_points[nrst_idx].x;
-    let anchor_y: f64 = base_points[nrst_idx].y;
+    let anchor_x: f64 = base_points[nrst_idx].0;
+    let anchor_y: f64 = base_points[nrst_idx].1;
     let mut arc_angle: f64 = PI2;
     let mut alpha: f64 = 0.0;    
 
@@ -754,6 +774,364 @@ pub fn toa_circles_1d_solve(base_points: &Vec<TOABasePoint>, z: f64, end_arc_ang
 pub fn dist_3d(x1: f64, y1: f64, z1: f64, x2: f64, y2: f64, z2: f64) -> f64 {
     ((x1 - x2).powi(2) + (y1 - y2).powi(2) + (z1 - z2).powi(2)).sqrt()
 }
+
+
+
+pub fn centroid_2d(points: &Vec<(f64, f64)>) -> (f64, f64) {
+    let mut st_sum = 0.0;
+    let mut nd_sum = 0.0;
+
+    for point in points {
+        st_sum += point.0;
+        nd_sum += point.1;
+    }
+
+    (st_sum / (points.len() as f64), nd_sum / (points.len() as f64))
+}
+
+pub fn centroid_3d(points: &Vec<(f64, f64, f64)>) -> (f64, f64, f64) {
+    let mut st_sum = 0.0;
+    let mut nd_sum = 0.0;
+    let mut rd_sum = 0.0;
+
+    for point in points {
+        st_sum += point.0;
+        nd_sum += point.1;
+        rd_sum += point.2;
+    }
+
+    (st_sum / (points.len() as f64), nd_sum / (points.len() as f64), rd_sum / (points.len() as f64))
+}
+
+pub fn centroid_3d_tod(points: &Vec<(f64, f64, f64, f64)>) -> (f64, f64, f64) {
+    
+    let mut st_sum = 0.0;
+    let mut nd_sum = 0.0;
+    let mut rd_sum = 0.0;
+
+    for point in points {
+        st_sum += point.0;
+        nd_sum += point.1;
+        rd_sum += point.2;
+    }
+
+    (st_sum / (points.len() as f64), nd_sum / (points.len() as f64), rd_sum / (points.len() as f64))
+}
+
+pub fn get_points_std_2d(points: &Vec<(f64, f64)>) -> (f64, f64) {
+
+    let mut sigmax = 0.0;
+    let mut sigmay = 0.0;
+
+    let centroid = centroid_2d(points);
+
+    for point in points {
+        sigmax += (point.0 - centroid.0).powi(2);
+        sigmay += (point.1 - centroid.1).powi(2);
+    }
+
+    if points.len() > 0
+    {
+        sigmax /= points.len() as f64;
+        sigmay /= points.len() as f64;
+    }
+
+    (sigmax, sigmay)
+}
+
+pub fn get_points_std_3d(points: &Vec<(f64, f64, f64)>) -> (f64, f64, f64) {
+
+    let mut sigmax = 0.0;
+    let mut sigmay = 0.0;
+    let mut sigmaz = 0.0;
+
+    let centroid = centroid_3d(points);
+
+    for point in points {
+        sigmax += (point.0 - centroid.0).powi(2);
+        sigmay += (point.1 - centroid.1).powi(2);
+        sigmaz += (point.2 - centroid.2).powi(2);
+    }
+
+    if points.len() > 0
+    {
+        sigmax /= points.len() as f64;
+        sigmay /= points.len() as f64;
+        sigmaz /= points.len() as f64;
+    }
+
+    (sigmax, sigmay, sigmaz)
+}
+
+
+/// Calculates the Distance Root Mean Squared (DRMS) of the specified
+/// standard errors.
+/// DRMS -> 65% probability
+/// 2DRMS -> 95% probability
+/// 3DRMS -> 98% probability
+pub fn drms(sigmax: f64, sigmay: f64) -> f64 {
+    (sigmax * sigmax + sigmay * sigmay).sqrt()
+}
+       
+/// Calculates the the Circular Error Probability - the radius of circle centered at the true position,
+/// containing the position estimate with probability of 50%       
+pub fn cep(sigmax: f64, sigmay: f64) -> f64 {
+    (0.62 * sigmay + 0.56 * sigmax)        
+}
+
+/// Calculates Spherical Error Probability - the radius of the sphere
+/// centered at the true position, containing the position estimate in 3D
+/// with probability of 50%
+pub fn sep(sigmax: f64, sigmay: f64, sigmaz: f64) -> f64 {
+    (0.51 * (sigmay + sigmax + sigmaz))
+}
+
+/// Calculates the Mean Radial Spherical Error - the radius of sphere
+/// centered at the true position, containing the position estimate in 3D
+/// with probability of 61%
+pub fn mrse(sigmax: f64, sigmay: f64, sigmaz: f64) -> f64 {
+    ((sigmax * sigmax + sigmay * sigmay + sigmaz * sigmaz).sqrt())
+}
+
+
+
+/// Converts geographic coordinates to local cartesian coordinates
+pub fn gcs_to_lcs_2d(points: &Vec<(f64, f64)>, el: &Ellipsoid) -> Vec<(f64, f64)> {
+
+    let mut result = Vec::new();
+    let centroid = centroid_2d(points);
+    let centroid_rad = (centroid.0.to_radians(), centroid.1.to_radians());
+
+    for point in points {
+        result.push(get_deltas_by_geopoints(centroid_rad.0, centroid_rad.1,
+                                            point.0.to_radians(), point.1.to_radians(),
+                                            el));        
+    }
+
+    (result)
+}
+
+/// Converts geographic coordinates to local cartesian coordinates
+pub fn gcs_to_lcs_3d(points: &Vec<(f64, f64, f64)>, el: &Ellipsoid) -> Vec<(f64, f64, f64)> {
+
+    let mut result = Vec::new();
+    let centroid = centroid_3d(points);
+    let centroid_rad = (centroid.0.to_radians(), centroid.1.to_radians(), centroid.2);
+
+    for point in points {
+        let deltas = get_deltas_by_geopoints(centroid_rad.0, centroid_rad.1,
+                                             point.0.to_radians(), point.1.to_radians(),
+                                             el);
+        result.push((deltas.0, deltas.1, point.2));
+    }
+
+    (result)
+}
+
+/// Converts geographic coordinates to local cartesian coordinates
+pub fn gcs_to_lcs_3d_tod(points: &Vec<(f64, f64, f64, f64)>, el: &Ellipsoid) -> Vec<(f64, f64, f64, f64)> {
+
+    let mut result = Vec::new();
+    let centroid = centroid_3d_tod(points);
+    let centroid_rad = (centroid.0.to_radians(), centroid.1.to_radians(), centroid.2);
+
+    for point in points {
+        let deltas = get_deltas_by_geopoints(centroid_rad.0, centroid_rad.1,
+                                             point.0.to_radians(), point.1.to_radians(),
+                                             el);
+        result.push((deltas.0, deltas.1, point.2, point.3));
+    }
+
+    (result)
+}
+
+pub fn lcs_to_gcs_2d(points: &Vec<(f64, f64)>, centroid: (f64, f64), el: &Ellipsoid) -> Vec<(f64, f64)> {
+
+    let mut result = Vec::new();
+    let centroid_rad =  (centroid.0.to_radians(), centroid.1.to_radians());
+    
+    for point in points {
+        result.push(geopoint_offset_by_deltas(centroid_rad.0, centroid_rad.1, point.1, point.0, el));
+    }
+
+    (result)
+}
+
+pub fn lcs_to_gcs_3d(points: &Vec<(f64, f64, f64)>, centroid: (f64, f64, f64), el: &Ellipsoid) -> Vec<(f64, f64, f64)> {
+
+    let mut result = Vec::new();
+    let centroid_rad =  (centroid.0.to_radians(), centroid.1.to_radians());
+    
+    for point in points {
+        let offsets = geopoint_offset_by_deltas(centroid_rad.0, centroid_rad.1, point.1, point.0, el);
+        result.push((offsets.0, offsets.1, point.2));
+    }
+
+    (result)
+}
+
+pub fn lcs_to_gcs_3d_tod(points: &Vec<(f64, f64, f64, f64)>, centroid: (f64, f64, f64), el: &Ellipsoid) -> Vec<(f64, f64, f64, f64)> {
+
+    let mut result = Vec::new();
+    let centroid_rad =  (centroid.0.to_radians(), centroid.1.to_radians());
+    
+    for point in points {
+        let offsets = geopoint_offset_by_deltas(centroid_rad.0, centroid_rad.1, point.1, point.0, el);
+        result.push((offsets.0, offsets.1, point.2, point.3));
+    }
+
+    (result)
+}
+
+pub fn build_base_lines(base_points: &Vec<(f64, f64, f64, f64)>, velocity: f64) -> Vec<(f64, f64, f64, f64, f64, f64, f64)> {
+
+    let mut result = Vec::new();
+
+    for i in 0..base_points.len() - 1 {
+        for j in i..base_points.len() {
+            result.push((base_points[i].0, base_points[i].1, base_points[i].2,
+                         base_points[j].0, base_points[j].1, base_points[j].2,
+                         (base_points[i].3 - base_points[j].3) * velocity));
+        }
+    }        
+
+    (result)
+}
+
+
+
+/// Solves 2D TOA navigation problem: searches for a target location by base points - points with known locations
+/// and measured slant ranges to the target. Nelder-Mead (simplex) method is used with preliminary 1D optimization
+pub fn toa_locate_2d(bases: &Vec<(f64, f64, f64, f64)>, 
+                    lat_prev_deg: f64, lon_prev_deg: f64, z_m: f64,
+                    max_iterations: i32, precision_threshold: f64, simplex_size: f64,
+                    el: &Ellipsoid) -> (f64, f64, f64, i32) {
+    
+    let bases_centroid_deg = centroid_3d_tod(bases);
+    let base_points_m = gcs_to_lcs_3d_tod(bases, el);
+    let x_prev_m;
+    let y_prev_m;
+
+    if lat_prev_deg.is_nan() || lon_prev_deg.is_nan() {
+        let prev_result = toa_circles_1d_solve(&base_points_m, z_m, PI_DBY_180, 10, 0.1);    
+        x_prev_m = prev_result.0;
+        y_prev_m = prev_result.1;
+    } 
+    else {
+        let prev_result = get_deltas_by_geopoints(bases_centroid_deg.0.to_radians(), bases_centroid_deg.1.to_radians(), 
+            lat_prev_deg.to_radians(), lon_prev_deg.to_radians(), el);
+        x_prev_m = prev_result.0;
+        y_prev_m = prev_result.1;
+    }
+
+    let solver_result = toa_nlm_2d_solve(&base_points_m, x_prev_m, y_prev_m, z_m,
+        max_iterations, precision_threshold, simplex_size);
+
+    let location = geopoint_offset_by_deltas(bases_centroid_deg.0.to_radians(), bases_centroid_deg.1.to_radians(),
+        solver_result.1, solver_result.0, el);
+
+    (location.0.to_degrees(), location.1.to_degrees(), solver_result.2, solver_result.3)
+}
+
+/// Solves 3D TOA navigation problem: searches for a target location by base points - points with known locations
+/// and measured slant ranges to the target. Nelder-Mead (simplex) method is used with preliminary 1D optimization
+pub fn toa_locate_3d(bases: &Vec<(f64, f64, f64, f64)>, 
+                    lat_prev_deg: f64, lon_prev_deg: f64, z_prev_m: f64,
+                    max_iterations: i32, precision_threshold: f64, simplex_size: f64,
+                    el: &Ellipsoid) -> (f64, f64, f64, f64, i32) {
+    
+    let bases_centroid_deg = centroid_3d_tod(bases);
+    let base_points_m = gcs_to_lcs_3d_tod(bases, el);
+    let mut x_prev_m = 0.0;
+    let mut y_prev_m = 0.0;
+    let mut z_prev_m_ = z_prev_m;
+    
+    if z_prev_m.is_nan() {
+        z_prev_m_ = bases[0].2;
+    }
+
+    if !lat_prev_deg.is_nan() && !lon_prev_deg.is_nan() {        
+        let prev_result = get_deltas_by_geopoints(bases_centroid_deg.0.to_radians(), bases_centroid_deg.1.to_radians(), 
+            lat_prev_deg.to_radians(), lon_prev_deg.to_radians(), el);        
+        x_prev_m = prev_result.0;
+        y_prev_m = prev_result.1;
+    }
+
+    let solver_result = toa_nlm_3d_solve(&base_points_m, x_prev_m, y_prev_m, z_prev_m_,
+        max_iterations, precision_threshold, simplex_size);
+
+    let location = geopoint_offset_by_deltas(bases_centroid_deg.0.to_radians(), bases_centroid_deg.1.to_radians(),
+        solver_result.1, solver_result.0, el);
+
+    (location.0.to_degrees(), location.1.to_degrees(), solver_result.2, solver_result.3, solver_result.4)
+}
+
+/// Solves TDOA navigation problem: searches for a target location by base points - points with known locations
+/// and measured times of arrival. Nelder-Mead (simplex) method is used.
+pub fn tdoa_locate_2d(bases: &Vec<(f64, f64, f64, f64)>,
+            lat_prev_deg: f64, lon_prev_deg: f64, z_m: f64,
+            max_iterations: i32, precision_threshold: f64, simplex_size: f64,
+            el: &Ellipsoid, velocity: f64) -> (f64, f64, f64, i32) {
+
+    let bases_centroid_deg = centroid_3d_tod(bases);
+    let base_points_m = gcs_to_lcs_3d_tod(&bases, el);
+    let base_lines_m = build_base_lines(&base_points_m, velocity);
+
+    let mut x_prev_m = 0.0;
+    let mut y_prev_m = 0.0;
+
+    if !lat_prev_deg.is_nan() && !lon_prev_deg.is_nan() {
+        let prev_result = get_deltas_by_geopoints(bases_centroid_deg.0.to_radians(), bases_centroid_deg.1.to_radians(), 
+            lat_prev_deg.to_radians(), lon_prev_deg.to_radians(), el);
+        x_prev_m = prev_result.0;
+        y_prev_m = prev_result.1;
+    }
+
+    let solver_result = tdoa_nlm_2d_solve(&base_lines_m, x_prev_m, y_prev_m, z_m,
+        max_iterations, precision_threshold, simplex_size);
+
+    let location = geopoint_offset_by_deltas(bases_centroid_deg.0.to_radians(), bases_centroid_deg.1.to_radians(),
+        solver_result.1, solver_result.0, el);
+
+    (location.0.to_degrees(), location.1.to_degrees(), solver_result.2, solver_result.3)
+}
+
+/// Solves TDOA navigation problem: searches for a target location by base points - points with known locations
+/// and measured times of arrival. Nelder-Mead (simplex) method is used.
+pub fn tdoa_locate_3d(bases: &Vec<(f64, f64, f64, f64)>,
+            lat_prev_deg: f64, lon_prev_deg: f64, z_prev_m: f64,
+            max_iterations: i32, precision_threshold: f64, simplex_size: f64,
+            el: &Ellipsoid, velocity: f64) -> (f64, f64, f64, f64, i32) {
+
+    let bases_centroid_deg = centroid_3d_tod(bases);
+    let base_points_m = gcs_to_lcs_3d_tod(bases, el);
+    let base_lines_m = build_base_lines(&base_points_m, velocity);
+
+    let mut x_prev_m = 0.0;
+    let mut y_prev_m = 0.0;
+    let mut z_prev_m_ = z_prev_m;
+
+    if z_prev_m.is_nan() {
+        z_prev_m_ = bases_centroid_deg.2;
+    }
+
+    if !lat_prev_deg.is_nan() && !lon_prev_deg.is_nan() {
+        let prev_result = get_deltas_by_geopoints(bases_centroid_deg.0.to_radians(), bases_centroid_deg.1.to_radians(), 
+            lat_prev_deg.to_radians(), lon_prev_deg.to_radians(), el);
+        x_prev_m = prev_result.0;
+        y_prev_m = prev_result.1;
+    }
+
+    let solver_result = tdoa_nlm_3d_solve(&base_lines_m, x_prev_m, y_prev_m, z_prev_m_,
+        max_iterations, precision_threshold, simplex_size);
+
+    let location = geopoint_offset_by_deltas(bases_centroid_deg.0.to_radians(), bases_centroid_deg.1.to_radians(),
+        solver_result.1, solver_result.0, el);
+
+    (location.0.to_degrees(), location.1.to_degrees(), solver_result.2, solver_result.3, solver_result.4)
+}
+
+
 
 
 #[macro_export]
@@ -1149,25 +1527,25 @@ mod tests {
         y = 200.0;
         z = 11.0;
         d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         x = 115.0;
         y = 267.0;
         z = 17.3;
         d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         x = 315.4;
         y = -118.4;
         z = 31.2;
         d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         x = -470.1;
         y = -216.7;
         z = 12.5;
         d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         
         let result = toa_nlm_2d_solve(&base_points, 0.0, 0.0, actual_z, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 1.0);
@@ -1202,28 +1580,28 @@ mod tests {
         z = 11.0;
         d_err = thread_rng().gen();
         d = dist_3d(x, y, z, actual_x, actual_y, actual_z) + d_err * err_h_amp * 2.0 - err_h_amp;
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         x = 115.0;
         y = 267.0;
         z = 17.3;
         d_err = thread_rng().gen();
         d = dist_3d(x, y, z, actual_x, actual_y, actual_z) + d_err * err_h_amp * 2.0 - err_h_amp;
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         x = 315.4;
         y = -118.4;
         z = 31.2;
         d_err = thread_rng().gen();
         d = dist_3d(x, y, z, actual_x, actual_y, actual_z) + d_err * err_h_amp * 2.0 - err_h_amp;
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         x = -470.1;
         y = -216.7;
         z = 12.5;
         d_err = thread_rng().gen();
         d = dist_3d(x, y, z, actual_x, actual_y, actual_z) + d_err * err_h_amp * 2.0 - err_h_amp;
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
         
         let result = toa_nlm_2d_solve(&base_points, 0.0, 0.0, actual_z, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 1.0);
 
@@ -1237,37 +1615,39 @@ mod tests {
     #[test]
     fn test_tdoa_nlm_2d_solve_no_noise() {
 
-        let mut base_lines = Vec::new();
+        let mut base_points = Vec::new();        
+        let velocity = 1500.0;
                     
         // random relevant values for actual point position
         let actual_x = 10.5;
         let actual_y = -11.0;
         let actual_z = 18.3;               
             
-        let x1 = -100.0;
-        let y1 = 200.0;
-        let z1 = 11.0;        
-        let d1 = dist_3d(x1, y1, z1, actual_x, actual_y, actual_z);
-        let x2 = 115.0;
-        let y2 = 267.0;
-        let z2 = 17.3;        
-        let d2 = dist_3d(x2, y2, z2, actual_x, actual_y, actual_z);
-        let x3 = 315.4;
-        let y3 = -118.4;
-        let z3 = 31.2;        
-        let d3 = dist_3d(x3, y3, z3, actual_x, actual_y, actual_z);                
-        let x4 = -470.1;
-        let y4 = -216.7;
-        let z4 = 12.5;        
-        let d4 = dist_3d(x4, y4, z4, actual_x, actual_y, actual_z);
-        
+        let mut x = -100.0;
+        let mut y = 200.0;
+        let mut z = 11.0;        
+        let mut t = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, t));
 
-        base_lines.push(TDOABaseline { x1: x1, y1: y1, z1: z1, x2: x2, y2: y2, z2: z2, prd: d1 - d2 });
-        base_lines.push(TDOABaseline { x1: x1, y1: y1, z1: z1, x2: x3, y2: y3, z2: z3, prd: d1 - d3 });
-        base_lines.push(TDOABaseline { x1: x1, y1: y1, z1: z1, x2: x4, y2: y4, z2: z4, prd: d1 - d4 });
-        base_lines.push(TDOABaseline { x1: x2, y1: y2, z1: z2, x2: x3, y2: y3, z2: z3, prd: d2 - d3 });
-        base_lines.push(TDOABaseline { x1: x2, y1: y2, z1: z2, x2: x4, y2: y4, z2: z4, prd: d2 - d4 });        
-        base_lines.push(TDOABaseline { x1: x3, y1: y3, z1: z3, x2: x4, y2: y4, z2: z4, prd: d3 - d4 });
+        x = 115.0;
+        y = 267.0;
+        z = 17.3;        
+        t = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, t));
+
+        x = 315.4;
+        y = -118.4;
+        z = 31.2;        
+        t = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, t));
+
+        x = -470.1;
+        y = -216.7;
+        z = 12.5;        
+        t = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, t));
+
+        let base_lines = build_base_lines(&base_points, velocity);
         
         let result = tdoa_nlm_2d_solve(&base_lines, 0.0, 0.0, actual_z, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 1.0);
 
@@ -1296,60 +1676,51 @@ mod tests {
         let y = 20.0;
         let z = 10.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         let x = -20.0;
         let y = 60.0;
         let z = 15.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
     
         let x = 20.0;
         let y = 60.0;
         let z = 20.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
     
         let x = 40.0;
         let y = 10.0;
         let z = 25.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
         
         let x = 50.0;
         let y = -20.0;
         let z = 30.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         let x = 30.0;
         let y = -50.0;
         let z = 35.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         let x = -20.0;
         let y = -40.0;
         let z = 35.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
 
         let x = -50.0;
         let y = -20.0;
         let z = 40.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        base_points.push((x, y, z, d));
                        
-        for base_point in &base_points {
-            x_prev += base_point.x;
-            y_prev += base_point.y;
-            z_prev += base_point.z;
-        }
-
-        x_prev /= base_points.len() as f64;
-        y_prev /= base_points.len() as f64;
-        z_prev /= base_points.len() as f64;
-
+        let (x_prev, y_prev, z_prev) = centroid_3d_tod(&base_points);
                 
         let result = toa_nlm_3d_solve(&base_points, x_prev, y_prev, z_prev, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0);
 
@@ -1363,86 +1734,66 @@ mod tests {
 
     #[test]
     fn test_tdoa_nlm_3d_solve_no_noise() {
-
-        let mut base_lines = Vec::new();                    
+                         
         let mut base_points = Vec::new();
+        let velocity = 1500.0;
     
         // random relevant values for actual point position
         let actual_x = 20.0;
         let actual_y = -20.0;
-        let actual_z = 20.0;
-
-        let mut x_prev = 0.0;
-        let mut y_prev = 0.0;
-        let mut z_prev = 0.0;
+        let actual_z = 20.0;       
 
         let x = -60.0;
         let y = 20.0;
         let z = 10.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, d));
 
         let x = -20.0;
         let y = 60.0;
         let z = 15.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, d));
     
         let x = 20.0;
         let y = 60.0;
         let z = 20.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, d));
     
         let x = 40.0;
         let y = 10.0;
         let z = 25.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, d));
         
         let x = 50.0;
         let y = -20.0;
         let z = 30.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, d));
 
         let x = 30.0;
         let y = -50.0;
         let z = 35.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, d));
 
         let x = -20.0;
         let y = -40.0;
         let z = 35.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, d));
 
         let x = -50.0;
         let y = -20.0;
         let z = 40.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push(TOABasePoint {x: x, y: y, z: z, d: d});
+        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
+        base_points.push((x, y, z, d));
                        
-        for base_point in &base_points {
-            x_prev += base_point.x;
-            y_prev += base_point.y;
-            z_prev += base_point.z;
-        }
-
-        x_prev /= base_points.len() as f64;
-        y_prev /= base_points.len() as f64;
-        z_prev /= base_points.len() as f64;
-
-        for i in 0..base_points.len() - 1 {
-            for j in i..base_points.len() {
-                base_lines.push(TDOABaseline { x1: base_points[i].x, y1: base_points[i].y, z1: base_points[i].z,
-                                               x2: base_points[j].x, y2: base_points[j].y, z2: base_points[j].z,
-                                               prd: base_points[i].d - base_points[j].d });
-            }
-        }        
-
-                
+        let (x_prev, y_prev, z_prev) = centroid_3d_tod(&base_points);
+        let base_lines = build_base_lines(&base_points, velocity);
+                    
         let result = tdoa_nlm_3d_solve(&base_lines, x_prev, y_prev, z_prev, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0);
 
         assert_approx_eq!(result.0, actual_x, 1.0);
@@ -1451,5 +1802,245 @@ mod tests {
         
         assert!(result.3 < 1.0, "Residual function greater than limit: {}", result.3);
         assert!(result.4 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", result.4);
-    }   
+    }
+
+
+    #[test]
+    fn test_toa_locate_2d() {
+
+        let el: Ellipsoid = Ellipsoid::from_descriptor(&WGS84_ELLIPSOID_DESCRIPTOR);
+
+        let base_number = 4;
+        let start_base_z_m: f64 = 1.5;
+        let base_z_step_m = 10.0;
+
+        let actual_target_lat_deg: f64 = 44.505455; // singed degrees
+        let actual_target_lon_deg: f64 = 48.547659; // signed degrees
+        let actual_target_z_m: f64 = 25.0;          // meters
+
+        // generate base points via Vincenty equations
+        let mut base_points = Vec::new();
+
+        let start_dst_projection_m = 500.0;          // start distance from target, meters
+        let dst_inc_step_m = 50.0;                   // distance increment
+                        
+        // azimuth step
+        let azimuth_step_rad = PI2 / base_number as f64;
+
+        let actual_target_lat_rad = actual_target_lat_deg.to_radians();
+        let actual_target_lon_rad = actual_target_lon_deg.to_radians();
+
+        // signal propagation speed
+        let velocity_mps = 1450.0; // m/s, let imagine that the location is underwater =)        
+
+        for base_idx in 0..base_number {
+
+            let dst_projection_m = start_dst_projection_m + dst_inc_step_m * base_idx as f64;
+            let azimuth_rad = azimuth_step_rad * base_idx as f64;            
+
+            let vd_result = vincenty_direct(actual_target_lat_rad, actual_target_lon_rad, 
+                azimuth_rad, dst_projection_m, 
+                &el, 
+                VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);
+                
+            let base_z_m = start_base_z_m + base_z_step_m * base_idx as f64;
+            let dz_m = actual_target_z_m - base_z_m;    
+            let slant_range_m = (dst_projection_m * dst_projection_m + dz_m * dz_m).sqrt();
+
+            base_points.push((vd_result.0.to_degrees(), vd_result.1.to_degrees(), base_z_m, slant_range_m));
+        }
+
+        
+        let lat_prev_deg = f64::NAN;
+        let lon_prev_deg = f64::NAN;
+        let toa_2d_result = toa_locate_2d(&base_points,
+            lat_prev_deg, lon_prev_deg, actual_target_z_m,
+            NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0, &el);
+
+        assert_approx_eq!(actual_target_lat_deg, toa_2d_result.0, 1E-6);
+        assert_approx_eq!(actual_target_lon_deg, toa_2d_result.1, 1E-6);
+        
+        assert!(toa_2d_result.2 < start_dst_projection_m * 0.01, "Residual function greater than limit (1%): {}", toa_2d_result.2);
+        assert!(toa_2d_result.3 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", toa_2d_result.3);
+    }
+
+    #[test]
+    fn test_toa_locate_3d() {
+
+        let el: Ellipsoid = Ellipsoid::from_descriptor(&WGS84_ELLIPSOID_DESCRIPTOR);
+
+        let base_number = 4;
+        let start_base_z_m: f64 = 1.5;
+        let base_z_step_m = 5.0;
+
+        let actual_target_lat_deg: f64 = 44.505455; // singed degrees
+        let actual_target_lon_deg: f64 = 48.547659; // signed degrees
+        let actual_target_z_m: f64 = 25.0;          // meters
+
+        // generate base points via Vincenty equations
+        let mut base_points = Vec::new();
+
+        let start_dst_projection_m = 500.0;          // start distance from target, meters
+        let dst_inc_step_m = 50.0;                   // distance increment
+                        
+        // azimuth step
+        let azimuth_step_rad = PI2 / base_number as f64;
+
+        let actual_target_lat_rad = actual_target_lat_deg.to_radians();
+        let actual_target_lon_rad = actual_target_lon_deg.to_radians();        
+
+        for base_idx in 0..base_number {
+
+            let dst_projection_m = start_dst_projection_m + dst_inc_step_m * base_idx as f64;
+            let azimuth_rad = azimuth_step_rad * base_idx as f64;            
+
+            let vd_result = vincenty_direct(actual_target_lat_rad, actual_target_lon_rad, 
+                azimuth_rad, dst_projection_m, 
+                &el, 
+                VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);
+                
+            let base_z_m = start_base_z_m + base_z_step_m * base_idx as f64;
+            let dz_m = actual_target_z_m - base_z_m;    
+            let slant_range_m = (dst_projection_m * dst_projection_m + dz_m * dz_m).sqrt();
+
+            base_points.push((vd_result.0.to_degrees(), vd_result.1.to_degrees(), base_z_m, slant_range_m));
+        }
+
+        
+        let lat_prev_deg = f64::NAN;
+        let lon_prev_deg = f64::NAN;
+        let z_prev_m = f64::NAN;
+        let toa_3d_result = toa_locate_3d(&base_points,
+            lat_prev_deg, lon_prev_deg, z_prev_m,
+            NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0, &el);
+
+        assert_approx_eq!(actual_target_lat_deg, toa_3d_result.0, 1E-3);
+        assert_approx_eq!(actual_target_lon_deg, toa_3d_result.1, 1E-3);
+        assert_approx_eq!(actual_target_z_m, toa_3d_result.2, start_dst_projection_m * 0.01);
+        
+        assert!(toa_3d_result.3 < start_dst_projection_m * 0.01, "Residual function greater than limit (1%): {}", toa_3d_result.3);
+        assert!(toa_3d_result.4 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", toa_3d_result.4);
+    }    
+
+    #[test]
+    fn test_tdoa_locate_2d() {
+        let el: Ellipsoid = Ellipsoid::from_descriptor(&WGS84_ELLIPSOID_DESCRIPTOR);
+
+        let base_number = 4;
+        let start_base_z_m: f64 = 1.5;
+        let base_z_step_m = 10.0;
+
+        let actual_target_lat_deg: f64 = 44.505455; // singed degrees
+        let actual_target_lon_deg: f64 = 48.547659; // signed degrees
+        let actual_target_z_m: f64 = 25.0;          // meters
+
+        // generate base points via Vincenty equations
+        let mut base_points = Vec::new();
+
+        let start_dst_projection_m = 500.0;          // start distance from target, meters
+        let dst_inc_step_m = 50.0;                   // distance increment
+                        
+        // azimuth step
+        let azimuth_step_rad = PI2 / base_number as f64;
+
+        let actual_target_lat_rad = actual_target_lat_deg.to_radians();
+        let actual_target_lon_rad = actual_target_lon_deg.to_radians();
+
+        // signal propagation speed
+        let velocity_mps = 1450.0; // m/s, let imagine that the location is underwater =)        
+
+        for base_idx in 0..base_number {
+
+            let dst_projection_m = start_dst_projection_m + dst_inc_step_m * base_idx as f64;
+            let azimuth_rad = azimuth_step_rad * base_idx as f64;            
+
+            let vd_result = vincenty_direct(actual_target_lat_rad, actual_target_lon_rad, 
+                azimuth_rad, dst_projection_m, 
+                &el, 
+                VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);
+                
+            let base_z_m = start_base_z_m + base_z_step_m * base_idx as f64;
+            let dz_m = actual_target_z_m - base_z_m;    
+            let slant_range_m = (dst_projection_m * dst_projection_m + dz_m * dz_m).sqrt();
+
+            base_points.push((vd_result.0.to_degrees(), vd_result.1.to_degrees(), base_z_m, slant_range_m / velocity_mps));
+        }
+        
+        
+        let lat_prev_deg = f64::NAN;
+        let lon_prev_deg = f64::NAN;
+        let toa_2d_result = tdoa_locate_2d(&base_points,
+            lat_prev_deg, lon_prev_deg, actual_target_z_m,
+            NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0, &el, velocity_mps);
+
+        assert_approx_eq!(actual_target_lat_deg, toa_2d_result.0, 1E-6);
+        assert_approx_eq!(actual_target_lon_deg, toa_2d_result.1, 1E-6);
+        
+        assert!(toa_2d_result.2 < start_dst_projection_m * 0.01, "Residual function greater than limit (1%): {}", toa_2d_result.2);
+        assert!(toa_2d_result.3 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", toa_2d_result.3);
+    }
+
+    #[test]
+    fn test_tdoa_locate_3d() {
+        let el: Ellipsoid = Ellipsoid::from_descriptor(&WGS84_ELLIPSOID_DESCRIPTOR);
+
+        let base_number = 4;
+        let start_base_z_m: f64 = 1.5;
+        let base_z_step_m = 5.0;
+
+        let actual_target_lat_deg: f64 = 44.505455; // singed degrees
+        let actual_target_lon_deg: f64 = 48.547659; // signed degrees
+        let actual_target_z_m: f64 = 25.0;          // meters
+
+        // generate base points via Vincenty equations
+        let mut base_points = Vec::new();
+
+        let start_dst_projection_m = 500.0;          // start distance from target, meters
+        let dst_inc_step_m = 50.0;                   // distance increment
+                        
+        // azimuth step
+        let azimuth_step_rad = PI2 / base_number as f64;
+
+        let actual_target_lat_rad = actual_target_lat_deg.to_radians();
+        let actual_target_lon_rad = actual_target_lon_deg.to_radians();
+
+        // signal propagation speed
+        let velocity_mps = 1450.0; // m/s, let imagine that the location is underwater =)        
+
+        for base_idx in 0..base_number {
+
+            let dst_projection_m = start_dst_projection_m + dst_inc_step_m * base_idx as f64;
+            let azimuth_rad = azimuth_step_rad * base_idx as f64;            
+
+            let vd_result = vincenty_direct(actual_target_lat_rad, actual_target_lon_rad, 
+                azimuth_rad, dst_projection_m, 
+                &el, 
+                VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);
+                
+            let base_z_m = start_base_z_m + base_z_step_m * base_idx as f64;
+            let dz_m = actual_target_z_m - base_z_m;    
+            let slant_range_m = (dst_projection_m * dst_projection_m + dz_m * dz_m).sqrt();
+
+            base_points.push((vd_result.0.to_degrees(), vd_result.1.to_degrees(), base_z_m, slant_range_m / velocity_mps));
+        }
+        
+        
+        let lat_prev_deg = f64::NAN;
+        let lon_prev_deg = f64::NAN;
+        let prev_z_m = f64::NAN;
+        let tdoa_3d_result = tdoa_locate_3d(&base_points,
+            lat_prev_deg, lon_prev_deg, prev_z_m,
+            NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0, &el, velocity_mps);
+
+
+        let vi_result = vincenty_inverse(actual_target_lat_rad, actual_target_lon_rad, 
+            tdoa_3d_result.0.to_radians(), tdoa_3d_result.1.to_radians(),
+            &el, VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);        
+
+        assert!(vi_result.0 < start_dst_projection_m * 0.01, "Estimated location is farer than limit (1%): {}", vi_result.0);
+        assert_approx_eq!(tdoa_3d_result.2, actual_target_z_m, start_dst_projection_m * 0.05);
+        
+        assert!(tdoa_3d_result.3 < start_dst_projection_m * 0.01, "Residual function greater than limit (1%): {}", tdoa_3d_result.3);
+        assert!(tdoa_3d_result.4 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", tdoa_3d_result.4);
+    }
 }
