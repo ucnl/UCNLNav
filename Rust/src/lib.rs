@@ -2037,7 +2037,7 @@ mod tests {
             tdoa_3d_result.0.to_radians(), tdoa_3d_result.1.to_radians(),
             &el, VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);        
 
-        assert!(vi_result.0 < start_dst_projection_m * 0.01, "Estimated location is farer than limit (1%): {}", vi_result.0);
+        assert!(vi_result.0 < start_dst_projection_m * 0.01, "Estimated location is further than limit (1%): {}", vi_result.0);
         assert_approx_eq!(tdoa_3d_result.2, actual_target_z_m, start_dst_projection_m * 0.05);
         
         assert!(tdoa_3d_result.3 < start_dst_projection_m * 0.01, "Residual function greater than limit (1%): {}", tdoa_3d_result.3);
