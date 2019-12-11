@@ -18,7 +18,7 @@ Basic example of usage is in UCNLNav_Tests demo application.
 
 30-NOV-2019 Update:
 * Added partial implementation of the library in Rust:
-- All the functionality from Algorithms.cs (TOA/TDOA not covered with tests yet)
+- All the functionality from Algorithms.cs & from Navigation.cs
 
 
 22-NOV-2019 Update:  
