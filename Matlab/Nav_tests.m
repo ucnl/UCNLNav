@@ -9,7 +9,7 @@ NLM_DEF_IT_LIMIT = 1200;   % Default iterations limit for Nelder-Mead (Simplex) 
 NLM_DEF_PREC_THRLD = 1E-8; % Default precision threhsold for Nelder-Mead (Simplex) optimization algorithm
 
 propagation_velocity = 1500.0; % in m/s
-el = Nav_BuildStandardEllipsoid('WGS84');
+el = Nav_build_standard_ellipsoid('WGS84');
 
 
 %%
