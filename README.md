@@ -4,16 +4,14 @@
 
 If this repository achieves:
 
-DONE! 25 stars - we'll add partial implementation in MATLAB (Ok, I have uploaded Matlab version on 20 starts =)
-50 stars - we'll add AoA (Angle of arrival) estimation routines  
-100 stars - we'll add C implementation of the library  
-150 stars - we'll add complete documentation for the library  
+- DONE! 25 stars - we'll add partial implementation in MATLAB (Ok, I have uploaded Matlab version on 20 starts =)
+- 50 stars - we'll add AoA (Angle of arrival) estimation routines  
+- 100 stars - we'll add C implementation of the library  
+- 150 stars - we'll add complete documentation for the library  
 
 This library contains routines for:
 * Solving geodetic problems (Vincenty equations, haversine)
 * Solving navigation & positioning problems (TOA & TDOA)
-
-Basic example of usage is in UCNLNav_Tests demo application.
 
 
 23-JAN-2020 Update:
