@@ -4,7 +4,7 @@
 
 If this repository achieves:
 
-25 stars - we'll add partial implementation in MATLAB  
+DONE! 25 stars - we'll add partial implementation in MATLAB (Ok, I have uploaded Matlab version on 20 starts =)
 50 stars - we'll add AoA (Angle of arrival) estimation routines  
 100 stars - we'll add C implementation of the library  
 150 stars - we'll add complete documentation for the library  
@@ -14,6 +14,13 @@ This library contains routines for:
 * Solving navigation & positioning problems (TOA & TDOA)
 
 Basic example of usage is in UCNLNav_Tests demo application.
+
+
+23-JAN-2020 Update:
+* Added partial implementation of the library in Matlab  
+To test the functionality, please, use:
+- [TOA & TDOA localisation demo script](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_TOA_TDOA_2D_demo.m) 
+- [Library tests](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_tests.m)  
 
 
 30-NOV-2019 Update:
