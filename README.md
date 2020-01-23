@@ -4,7 +4,7 @@
 
 If this repository achieves:
 
-- DONE! 25 stars - we'll add partial implementation in MATLAB (Ok, I have uploaded Matlab version on 20 starts =)
+- DONE! 25 stars - we'll add partial implementation in MATLAB (Ok, I have uploaded Matlab version on 20 stars =)
 - 50 stars - we'll add AoA (Angle of arrival) estimation routines  
 - 100 stars - we'll add C implementation of the library  
 - 150 stars - we'll add complete documentation for the library  
