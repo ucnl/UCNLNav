@@ -1,5 +1,19 @@
 # UCNLNav
 
+This library contains routines for:
+- Solving geodetic problems (C#/Rust/Matlab)
+- Solving TDOA & TOA positioning/navigation problems in 2D & 3D (C#/Rust/Matlab)
+- Algorithms for Virtual Long Baseline positioning (C#)  
+
+# Example of TDOA problem
+- Known times of arrival to/from base points with known locations
+- Known target depth    
+![](https://github.com/ucnl/UCNLNav/blob/master/Docs/Pics/problem.png)    
+Calculated desudual function:    
+![](https://github.com/ucnl/UCNLNav/blob/master/Docs/Pics/TDOA_2D_res_surf.png)    
+Residual function and estimated target location:    
+![](https://github.com/ucnl/UCNLNav/blob/master/Docs/Pics/TDOA_2D_res_cont.png)    
+
 ## WARNING!
 
 If this repository achieves:
