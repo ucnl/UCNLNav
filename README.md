@@ -23,10 +23,7 @@ If this repository achieves:
 - 100 stars - we'll add C implementation of the library  
 - 150 stars - we'll add complete documentation for the library  
 
-This library contains routines for:
-* Solving geodetic problems (Vincenty equations, haversine)
-* Solving navigation & positioning problems (TOA & TDOA)
-
+## HISTORY
 
 23-JAN-2020 Update:
 * Added partial implementation of the library in Matlab  
