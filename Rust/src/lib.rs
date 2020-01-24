@@ -187,7 +187,7 @@ pub fn haversine_direct(sp_lat_rad: f64, sp_lon_rad: f64, dst_m: f64, fwd_az_rad
     let delta = dst_m / e_radius_m;
     let ep_lat_rad = wrap_2pi((sp_lat_rad.sin() * delta.cos() + sp_lat_rad.cos() * delta.sin() * fwd_az_rad.cos()).asin());
     let ep_lon_rad = wrap_2pi(PI2 + consts::PI + 
-        (sp_lon_rad + (fwd_az_rad.sin() * delta.sin() * sp_lat_rad.cos()).atan2(delta.cos() - sp_lat_rad.sin().powi(2)))) - consts::PI;
+        (sp_lon_rad + (fwd_az_rad.sin() * delta.sin() * sp_lat_rad.cos()).atan2(delta.cos() - sp_lat_rad.sin() * ep_lat_rad.sin()))) - consts::PI;
     (ep_lat_rad, ep_lon_rad)
 }
         
@@ -1849,7 +1849,6 @@ mod tests {
 
             base_points.push((vd_result.0.to_degrees(), vd_result.1.to_degrees(), base_z_m, slant_range_m));
         }
-
         
         let lat_prev_deg = f64::NAN;
         let lon_prev_deg = f64::NAN;
@@ -2037,7 +2036,7 @@ mod tests {
             tdoa_3d_result.0.to_radians(), tdoa_3d_result.1.to_radians(),
             &el, VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);        
 
-        assert!(vi_result.0 < start_dst_projection_m * 0.01, "Estimated location is further than limit (1%): {}", vi_result.0);
+        assert!(vi_result.0 < start_dst_projection_m * 0.01, "Estimated location is farer than limit (1%): {}", vi_result.0);
         assert_approx_eq!(tdoa_3d_result.2, actual_target_z_m, start_dst_projection_m * 0.05);
         
         assert!(tdoa_3d_result.3 < start_dst_projection_m * 0.01, "Residual function greater than limit (1%): {}", tdoa_3d_result.3);
