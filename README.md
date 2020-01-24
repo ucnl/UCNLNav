@@ -9,7 +9,7 @@ This library contains routines for:
 - Known times of arrival to/from base points with known locations
 - Known target depth    
 ![](https://github.com/ucnl/UCNLNav/blob/master/Docs/Pics/problem.png)    
-Calculated desudual function:    
+Calculated residual function:    
 ![](https://github.com/ucnl/UCNLNav/blob/master/Docs/Pics/TDOA_2D_res_surf.png)    
 Residual function and estimated target location:    
 ![](https://github.com/ucnl/UCNLNav/blob/master/Docs/Pics/TDOA_2D_res_cont.png)    
