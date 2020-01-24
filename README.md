@@ -18,6 +18,7 @@ This library contains routines for:
 * Added partial implementation of the library in Matlab  
 To test the functionality, please, use:
 - [TOA & TDOA localisation demo script](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_TOA_TDOA_2D_demo.m) 
+- [Geodetic problems: Haversine vs. Vincenty demo](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_Haversine_Vs_Vincenty_demo.m)
 - [Library tests](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_tests.m)  
 
 
