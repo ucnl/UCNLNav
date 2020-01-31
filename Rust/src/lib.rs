@@ -21,7 +21,7 @@ const NLM_G                 : f64 = 2.0;
 pub const NLM_DEF_IT_LIMIT  : i32 = 1200;
 
 /// Default precision threhsold for Nelder-Mead (Simplex) optimization algorithm
-pub const NLM_DEF_PREC_THRLD: f64 = 1E-9;
+pub const NLM_DEF_PREC_THRLD: f64 = 1E-8;
 
 
 /// Structure to store two main ellipsoid parameters: Major semi-axis and inverse flattening
@@ -1668,10 +1668,6 @@ mod tests {
         let actual_y = -20.0;
         let actual_z = 20.0;
 
-        let mut x_prev = 0.0;
-        let mut y_prev = 0.0;
-        let mut z_prev = 0.0;
-
         let x = -60.0;
         let y = 20.0;
         let z = 10.0;
@@ -1828,10 +1824,7 @@ mod tests {
         let azimuth_step_rad = PI2 / base_number as f64;
 
         let actual_target_lat_rad = actual_target_lat_deg.to_radians();
-        let actual_target_lon_rad = actual_target_lon_deg.to_radians();
-
-        // signal propagation speed
-        let velocity_mps = 1450.0; // m/s, let imagine that the location is underwater =)        
+        let actual_target_lon_rad = actual_target_lon_deg.to_radians();          
 
         for base_idx in 0..base_number {
 
