@@ -21,7 +21,7 @@ const NLM_G                 : f64 = 2.0;
 pub const NLM_DEF_IT_LIMIT  : i32 = 1200;
 
 /// Default precision threhsold for Nelder-Mead (Simplex) optimization algorithm
-pub const NLM_DEF_PREC_THRLD: f64 = 1E-8;
+pub const NLM_DEF_PREC_THRLD: f64 = 1E-9;
 
 
 /// Structure to store two main ellipsoid parameters: Major semi-axis and inverse flattening
