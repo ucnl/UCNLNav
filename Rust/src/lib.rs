@@ -80,7 +80,7 @@ impl Ellipsoid {
 
 
 /// Residual function for Nelder-Mead (simplex) optimizer
-pub type Eps3dFunc<T> = fn(&Vec<T>, f64, f64, f64) -> f64;
+pub type Eps3dFunc<T> = fn(&[T], f64, f64, f64) -> f64;
 
 /// Standard WGS72 Ellipsoid
 pub const WGS72_ELLIPSOID_DESCRIPTOR: EllipsoidDescriptor = EllipsoidDescriptor{ mjsa_m: 6378135.0, ifltn: 298.26 };
@@ -342,7 +342,7 @@ pub fn vincenty_direct(sp_lat_rad: f64, sp_lon_rad: f64, fwd_az_rad: f64, dst_m:
 }
 
 
-pub fn eps_toa3d(base_points: &Vec<(f64, f64, f64, f64)>, x: f64, y: f64, z: f64) -> f64 {
+pub fn eps_toa3d(base_points: &[(f64, f64, f64, f64)], x: f64, y: f64, z: f64) -> f64 {
     
     let mut result: f64 = 0.0;
     
@@ -355,7 +355,7 @@ pub fn eps_toa3d(base_points: &Vec<(f64, f64, f64, f64)>, x: f64, y: f64, z: f64
     result
 }
  
-pub fn eps_tdoa3d(base_lines: &Vec<(f64, f64, f64, f64, f64, f64, f64)>, x: f64, y: f64, z: f64) -> f64 {
+pub fn eps_tdoa3d(base_lines: &[(f64, f64, f64, f64, f64, f64, f64)], x: f64, y: f64, z: f64) -> f64 {
 
     let mut result: f64 = 0.0;
     
@@ -372,7 +372,7 @@ pub fn eps_tdoa3d(base_lines: &Vec<(f64, f64, f64, f64, f64, f64, f64)>, x: f64,
 }
 
 
-pub fn nlm_2d_solve<T>(eps: Eps3dFunc<T>, base_elements: &Vec<T>, x_prev: f64, y_prev: f64, z: f64,
+pub fn nlm_2d_solve<T>(eps: Eps3dFunc<T>, base_elements: &[T], x_prev: f64, y_prev: f64, z: f64,
                   max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, i32) {
 
     let mut is_finished: bool = false;
@@ -506,7 +506,7 @@ pub fn nlm_2d_solve<T>(eps: Eps3dFunc<T>, base_elements: &Vec<T>, x_prev: f64, y
     (xix[0], xiy[0], eps(base_elements, xix[0], xiy[0], z).sqrt(), it_cnt)
 }
 
-pub fn nlm_3d_solve<T>(eps: Eps3dFunc<T>, base_elements: &Vec<T>, x_prev: f64, y_prev: f64, z_prev: f64,
+pub fn nlm_3d_solve<T>(eps: Eps3dFunc<T>, base_elements: &[T], x_prev: f64, y_prev: f64, z_prev: f64,
     max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, f64, i32) {    
    
     let mut xix: [f64; 4] = [0.0; 4];
@@ -682,25 +682,25 @@ pub fn nlm_3d_solve<T>(eps: Eps3dFunc<T>, base_elements: &Vec<T>, x_prev: f64, y
 }
 
                                                             
-pub fn toa_nlm_2d_solve(base_points: &Vec<(f64, f64, f64, f64)>, x_prev: f64, y_prev: f64, z: f64,
+pub fn toa_nlm_2d_solve(base_points: &[(f64, f64, f64, f64)], x_prev: f64, y_prev: f64, z: f64,
     max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, i32) {
     nlm_2d_solve::<(f64, f64, f64, f64)>(eps_toa3d, base_points, x_prev, y_prev, z, max_iterations, precision_threshold, simplex_size)    
 }
 
 
 
-pub fn tdoa_nlm_2d_solve(base_lines: &Vec<(f64, f64, f64, f64, f64, f64, f64)>,  x_prev: f64, y_prev: f64, z: f64,
+pub fn tdoa_nlm_2d_solve(base_lines: &[(f64, f64, f64, f64, f64, f64, f64)],  x_prev: f64, y_prev: f64, z: f64,
     max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, i32) {
     nlm_2d_solve::<(f64, f64, f64, f64, f64, f64, f64)>(eps_tdoa3d, base_lines, x_prev, y_prev, z, max_iterations, precision_threshold, simplex_size)       
 }
        
-pub fn toa_nlm_3d_solve(base_points: &Vec<(f64, f64, f64, f64)>, x_prev: f64, y_prev: f64, z_prev: f64,
+pub fn toa_nlm_3d_solve(base_points: &[(f64, f64, f64, f64)], x_prev: f64, y_prev: f64, z_prev: f64,
     max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, f64, i32) {
 
     nlm_3d_solve::<(f64, f64, f64, f64)>(eps_toa3d, base_points, x_prev, y_prev, z_prev, max_iterations, precision_threshold, simplex_size)
 }
 
-pub fn tdoa_nlm_3d_solve(base_lines: &Vec<(f64, f64, f64, f64, f64, f64, f64)>,  x_prev: f64, y_prev: f64, z_prev: f64,
+pub fn tdoa_nlm_3d_solve(base_lines: &[(f64, f64, f64, f64, f64, f64, f64)],  x_prev: f64, y_prev: f64, z_prev: f64,
     max_iterations: i32, precision_threshold: f64, simplex_size: f64) -> (f64, f64, f64, f64, i32) {
 
     nlm_3d_solve::<(f64, f64, f64, f64, f64, f64, f64)>(eps_tdoa3d, base_lines, x_prev, y_prev, z_prev, max_iterations, precision_threshold, simplex_size)
@@ -708,7 +708,7 @@ pub fn tdoa_nlm_3d_solve(base_lines: &Vec<(f64, f64, f64, f64, f64, f64, f64)>, 
 
 
 // TODO: tests for routines below
-pub fn get_nearest_item_index(base_points: &Vec<(f64, f64, f64, f64)>) -> usize {
+pub fn get_nearest_item_index(base_points: &[(f64, f64, f64, f64)]) -> usize {
 
     let mut nrst_idx = 0;
     let mut min_dst: f64 = f64::MIN;
@@ -723,7 +723,7 @@ pub fn get_nearest_item_index(base_points: &Vec<(f64, f64, f64, f64)>) -> usize 
     nrst_idx
 }
 
-pub fn toa_circles_intersection_solve(base_points: &Vec<(f64, f64, f64, f64)>, anchor_x: f64, anchor_y: f64, radius: f64, z: f64,
+pub fn toa_circles_intersection_solve(base_points: &[(f64, f64, f64, f64)], anchor_x: f64, anchor_y: f64, radius: f64, z: f64,
                             arc_mid_rad: f64, arc_angle_rad: f64, steps: i32) -> f64 {
 
     let mut a: f64 = arc_mid_rad - arc_angle_rad / 2.0;
@@ -751,7 +751,7 @@ pub fn toa_circles_intersection_solve(base_points: &Vec<(f64, f64, f64, f64)>, a
     a_best
 }
 
-pub fn toa_circles_1d_solve(base_points: &Vec<(f64, f64, f64, f64)>, z: f64, end_arc_angle_rad: f64, steps: i32, arc_angle_decrease_factor: f64) -> (f64, f64, f64) {                
+pub fn toa_circles_1d_solve(base_points: &[(f64, f64, f64, f64)], z: f64, end_arc_angle_rad: f64, steps: i32, arc_angle_decrease_factor: f64) -> (f64, f64, f64) {                
     let nrst_idx = get_nearest_item_index(base_points);
     let d_z: f64 = (base_points[nrst_idx].2 - z).abs();
     let radius: f64 = if base_points[nrst_idx].3 < d_z { 0.0 } else { (base_points[nrst_idx].3.powi(2) - d_z.powi(2)).sqrt() };
@@ -777,7 +777,7 @@ pub fn dist_3d(x1: f64, y1: f64, z1: f64, x2: f64, y2: f64, z2: f64) -> f64 {
 
 
 
-pub fn centroid_2d(points: &Vec<(f64, f64)>) -> (f64, f64) {
+pub fn centroid_2d(points: &[(f64, f64)]) -> (f64, f64) {
     let mut st_sum = 0.0;
     let mut nd_sum = 0.0;
 
@@ -789,7 +789,7 @@ pub fn centroid_2d(points: &Vec<(f64, f64)>) -> (f64, f64) {
     (st_sum / (points.len() as f64), nd_sum / (points.len() as f64))
 }
 
-pub fn centroid_3d(points: &Vec<(f64, f64, f64)>) -> (f64, f64, f64) {
+pub fn centroid_3d(points: &[(f64, f64, f64)]) -> (f64, f64, f64) {
     let mut st_sum = 0.0;
     let mut nd_sum = 0.0;
     let mut rd_sum = 0.0;
@@ -803,7 +803,7 @@ pub fn centroid_3d(points: &Vec<(f64, f64, f64)>) -> (f64, f64, f64) {
     (st_sum / (points.len() as f64), nd_sum / (points.len() as f64), rd_sum / (points.len() as f64))
 }
 
-pub fn centroid_3d_tod(points: &Vec<(f64, f64, f64, f64)>) -> (f64, f64, f64) {
+pub fn centroid_3d_tod(points: &[(f64, f64, f64, f64)]) -> (f64, f64, f64) {
     
     let mut st_sum = 0.0;
     let mut nd_sum = 0.0;
@@ -818,7 +818,7 @@ pub fn centroid_3d_tod(points: &Vec<(f64, f64, f64, f64)>) -> (f64, f64, f64) {
     (st_sum / (points.len() as f64), nd_sum / (points.len() as f64), rd_sum / (points.len() as f64))
 }
 
-pub fn get_points_std_2d(points: &Vec<(f64, f64)>) -> (f64, f64) {
+pub fn get_points_std_2d(points: &[(f64, f64)]) -> (f64, f64) {
 
     let mut sigmax = 0.0;
     let mut sigmay = 0.0;
@@ -839,7 +839,7 @@ pub fn get_points_std_2d(points: &Vec<(f64, f64)>) -> (f64, f64) {
     (sigmax, sigmay)
 }
 
-pub fn get_points_std_3d(points: &Vec<(f64, f64, f64)>) -> (f64, f64, f64) {
+pub fn get_points_std_3d(points: &[(f64, f64, f64)]) -> (f64, f64, f64) {
 
     let mut sigmax = 0.0;
     let mut sigmay = 0.0;
@@ -896,7 +896,7 @@ pub fn mrse(sigmax: f64, sigmay: f64, sigmaz: f64) -> f64 {
 
 
 /// Converts geographic coordinates to local cartesian coordinates
-pub fn gcs_to_lcs_2d(points: &Vec<(f64, f64)>, el: &Ellipsoid) -> Vec<(f64, f64)> {
+pub fn gcs_to_lcs_2d(points: &[(f64, f64)], el: &Ellipsoid) -> Vec<(f64, f64)> {
 
     let mut result = Vec::new();
     let centroid = centroid_2d(points);
@@ -912,7 +912,7 @@ pub fn gcs_to_lcs_2d(points: &Vec<(f64, f64)>, el: &Ellipsoid) -> Vec<(f64, f64)
 }
 
 /// Converts geographic coordinates to local cartesian coordinates
-pub fn gcs_to_lcs_3d(points: &Vec<(f64, f64, f64)>, el: &Ellipsoid) -> Vec<(f64, f64, f64)> {
+pub fn gcs_to_lcs_3d(points: &[(f64, f64, f64)], el: &Ellipsoid) -> Vec<(f64, f64, f64)> {
 
     let mut result = Vec::new();
     let centroid = centroid_3d(points);
@@ -929,7 +929,7 @@ pub fn gcs_to_lcs_3d(points: &Vec<(f64, f64, f64)>, el: &Ellipsoid) -> Vec<(f64,
 }
 
 /// Converts geographic coordinates to local cartesian coordinates
-pub fn gcs_to_lcs_3d_tod(points: &Vec<(f64, f64, f64, f64)>, el: &Ellipsoid) -> Vec<(f64, f64, f64, f64)> {
+pub fn gcs_to_lcs_3d_tod(points: &[(f64, f64, f64, f64)], el: &Ellipsoid) -> Vec<(f64, f64, f64, f64)> {
 
     let mut result = Vec::new();
     let centroid = centroid_3d_tod(points);
@@ -945,7 +945,7 @@ pub fn gcs_to_lcs_3d_tod(points: &Vec<(f64, f64, f64, f64)>, el: &Ellipsoid) -> 
     (result)
 }
 
-pub fn lcs_to_gcs_2d(points: &Vec<(f64, f64)>, centroid: (f64, f64), el: &Ellipsoid) -> Vec<(f64, f64)> {
+pub fn lcs_to_gcs_2d(points: &[(f64, f64)], centroid: (f64, f64), el: &Ellipsoid) -> Vec<(f64, f64)> {
 
     let mut result = Vec::new();
     let centroid_rad =  (centroid.0.to_radians(), centroid.1.to_radians());
@@ -957,7 +957,7 @@ pub fn lcs_to_gcs_2d(points: &Vec<(f64, f64)>, centroid: (f64, f64), el: &Ellips
     (result)
 }
 
-pub fn lcs_to_gcs_3d(points: &Vec<(f64, f64, f64)>, centroid: (f64, f64, f64), el: &Ellipsoid) -> Vec<(f64, f64, f64)> {
+pub fn lcs_to_gcs_3d(points: &[(f64, f64, f64)], centroid: (f64, f64, f64), el: &Ellipsoid) -> Vec<(f64, f64, f64)> {
 
     let mut result = Vec::new();
     let centroid_rad =  (centroid.0.to_radians(), centroid.1.to_radians());
@@ -970,7 +970,7 @@ pub fn lcs_to_gcs_3d(points: &Vec<(f64, f64, f64)>, centroid: (f64, f64, f64), e
     (result)
 }
 
-pub fn lcs_to_gcs_3d_tod(points: &Vec<(f64, f64, f64, f64)>, centroid: (f64, f64, f64), el: &Ellipsoid) -> Vec<(f64, f64, f64, f64)> {
+pub fn lcs_to_gcs_3d_tod(points: &[(f64, f64, f64, f64)], centroid: (f64, f64, f64), el: &Ellipsoid) -> Vec<(f64, f64, f64, f64)> {
 
     let mut result = Vec::new();
     let centroid_rad =  (centroid.0.to_radians(), centroid.1.to_radians());
@@ -983,7 +983,7 @@ pub fn lcs_to_gcs_3d_tod(points: &Vec<(f64, f64, f64, f64)>, centroid: (f64, f64
     (result)
 }
 
-pub fn build_base_lines(base_points: &Vec<(f64, f64, f64, f64)>, velocity: f64) -> Vec<(f64, f64, f64, f64, f64, f64, f64)> {
+pub fn build_base_lines(base_points: &[(f64, f64, f64, f64)], velocity: f64) -> Vec<(f64, f64, f64, f64, f64, f64, f64)> {
 
     let mut result = Vec::new();
 
@@ -1002,7 +1002,7 @@ pub fn build_base_lines(base_points: &Vec<(f64, f64, f64, f64)>, velocity: f64) 
 
 /// Solves 2D TOA navigation problem: searches for a target location by base points - points with known locations
 /// and measured slant ranges to the target. Nelder-Mead (simplex) method is used with preliminary 1D optimization
-pub fn toa_locate_2d(bases: &Vec<(f64, f64, f64, f64)>, 
+pub fn toa_locate_2d(bases: &[(f64, f64, f64, f64)], 
                     lat_prev_deg: f64, lon_prev_deg: f64, z_m: f64,
                     max_iterations: i32, precision_threshold: f64, simplex_size: f64,
                     el: &Ellipsoid) -> (f64, f64, f64, i32) {
@@ -1035,7 +1035,7 @@ pub fn toa_locate_2d(bases: &Vec<(f64, f64, f64, f64)>,
 
 /// Solves 3D TOA navigation problem: searches for a target location by base points - points with known locations
 /// and measured slant ranges to the target. Nelder-Mead (simplex) method is used with preliminary 1D optimization
-pub fn toa_locate_3d(bases: &Vec<(f64, f64, f64, f64)>, 
+pub fn toa_locate_3d(bases: &[(f64, f64, f64, f64)], 
                     lat_prev_deg: f64, lon_prev_deg: f64, z_prev_m: f64,
                     max_iterations: i32, precision_threshold: f64, simplex_size: f64,
                     el: &Ellipsoid) -> (f64, f64, f64, f64, i32) {
@@ -1068,7 +1068,7 @@ pub fn toa_locate_3d(bases: &Vec<(f64, f64, f64, f64)>,
 
 /// Solves TDOA navigation problem: searches for a target location by base points - points with known locations
 /// and measured times of arrival. Nelder-Mead (simplex) method is used.
-pub fn tdoa_locate_2d(bases: &Vec<(f64, f64, f64, f64)>,
+pub fn tdoa_locate_2d(bases: &[(f64, f64, f64, f64)],
             lat_prev_deg: f64, lon_prev_deg: f64, z_m: f64,
             max_iterations: i32, precision_threshold: f64, simplex_size: f64,
             el: &Ellipsoid, velocity: f64) -> (f64, f64, f64, i32) {
@@ -1098,7 +1098,7 @@ pub fn tdoa_locate_2d(bases: &Vec<(f64, f64, f64, f64)>,
 
 /// Solves TDOA navigation problem: searches for a target location by base points - points with known locations
 /// and measured times of arrival. Nelder-Mead (simplex) method is used.
-pub fn tdoa_locate_3d(bases: &Vec<(f64, f64, f64, f64)>,
+pub fn tdoa_locate_3d(bases: &[(f64, f64, f64, f64)],
             lat_prev_deg: f64, lon_prev_deg: f64, z_prev_m: f64,
             max_iterations: i32, precision_threshold: f64, simplex_size: f64,
             el: &Ellipsoid, velocity: f64) -> (f64, f64, f64, f64, i32) {
