@@ -98,7 +98,17 @@ namespace UCNLNav
 
         public override string ToString()
         {
-            return string.Format("LAT: {0:F06}°, LON: {1:F06}°", Latitude, Longitude);
+            return string.Format("LAT: {0:F06}, LON: {1:F06}", Latitude, Longitude);
+        }
+
+        public static GeoPoint ToRad(GeoPoint geoPointDeg)
+        {
+            return new GeoPoint(Algorithms.Deg2Rad(geoPointDeg.Latitude), Algorithms.Deg2Rad(geoPointDeg.Longitude));
+        }
+
+        public static GeoPoint ToDeg(GeoPoint geoPointRad)
+        {
+            return new GeoPoint(Algorithms.Rad2Deg(geoPointRad.Latitude), Algorithms.Rad2Deg(geoPointRad.Longitude));
         }
 
         #endregion
@@ -114,6 +124,11 @@ namespace UCNLNav
 
         #region Constructor
 
+        public GeoPoint3D(GeoPoint point2D, double dpt)
+            : this(point2D.Latitude, point2D.Longitude, dpt)
+        {
+        }
+
         public GeoPoint3D(double lat, double lon, double dpt)
             : base(lat, lon)
         {
@@ -127,6 +142,18 @@ namespace UCNLNav
         public override string ToString()
         {
             return string.Format("{0}, DPT: {1:F03} m", base.ToString(), Depth);
+        }
+
+        public static GeoPoint3D ToRad(GeoPoint3D geoPointDeg)
+        {
+            return new GeoPoint3D(Algorithms.Deg2Rad(geoPointDeg.Latitude),
+                Algorithms.Deg2Rad(geoPointDeg.Longitude), geoPointDeg.Depth);
+        }
+
+        public static GeoPoint3D ToDeg(GeoPoint3D geoPointRad)
+        {
+            return new GeoPoint3D(Algorithms.Rad2Deg(geoPointRad.Latitude),
+                Algorithms.Deg2Rad(geoPointRad.Longitude), geoPointRad.Depth);
         }
 
         #endregion
@@ -211,6 +238,67 @@ namespace UCNLNav
         public override string ToString()
         {
             return string.Format("{0}, TS: {1}", base.ToString(), TimeStamp.ToShortTimeString());
+        }
+
+        #endregion
+    }
+
+    public class GeoPoint3DE : GeoPoint3D
+    {
+        #region Properties
+
+        public double RadialError;
+
+        #endregion
+
+        #region Constructor
+
+        public GeoPoint3DE(double lat, double lon, double dpt, double rerr)
+            : base(lat, lon, dpt)
+        {
+            RadialError = rerr;
+        }
+
+        #endregion
+
+        #region Methods
+
+        public override string ToString()
+        {
+            return string.Format("{0}, RER: {0:F03}", base.ToString(), RadialError);
+        }
+
+        #endregion
+    }
+
+    public class GeoPoint3DETm : GeoPoint3D
+    {
+        #region Properties
+
+        public double RadialError;
+        public DateTime TimeStamp;
+
+        #endregion
+
+        #region Constructor
+
+        public GeoPoint3DETm(double lat, double lon, double dpt, double rerr, DateTime tStamp)
+            : base(lat, lon, dpt)
+        {
+            RadialError = rerr;
+            TimeStamp = tStamp;
+        }
+
+        #endregion
+
+        #region Methods
+
+        public override string ToString()
+        {
+            return string.Format("LAT: {0:F06}°, LON: {1:F06}°", 
+                base.Latitude, base.Longitude, base.Depth, 
+                RadialError, 
+                TimeStamp.ToShortTimeString());
         }
 
         #endregion

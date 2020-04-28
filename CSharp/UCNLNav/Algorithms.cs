@@ -34,7 +34,7 @@ namespace UCNLNav
         static readonly double NLM_G = 2.0;
 
         public static readonly int    NLM_DEF_IT_LIMIT = 600;
-        public static readonly double NLM_DEF_PREC_THRLD = 1E-8;
+        public static readonly double NLM_DEF_PREC_THRLD = 1E-10;
 
         #endregion
 
@@ -375,7 +375,7 @@ namespace UCNLNav
             dst_m = el.MinorSemiAxis_m * a_ * (sigma - delta_sigma);
 
             fwd_az_rad = Math.Atan2(cos_u_2 * sin_lambda, cos_u_1 * sin_u_2 - sin_u_1 * cos_u_2 * cos_lambda);
-            rev_az_rad = Math.Atan2(cos_u_1 * sin_lambda, -sin_u_1 * cos_u_2 + cos_u_1 * sin_u_2 * cos_lambda);
+            rev_az_rad = Math.Atan2(cos_u_1 * sin_lambda, -sin_u_1 * cos_u_2 + cos_u_1 * sin_u_2 * cos_lambda);            
 
             while (fwd_az_rad < 0)
                 fwd_az_rad += PI2;
@@ -808,8 +808,8 @@ namespace UCNLNav
                         if (fr < fxi[0])
                         {
                             xex = x0x + NLM_G * (xrx - x0x);
-                            xey = x0x + NLM_G * (xry - x0x);
-                            xea = x0x + NLM_G * (xra - x0x);
+                            xey = x0y + NLM_G * (xry - x0y);
+                            xea = x0a + NLM_G * (xra - x0a);
                             fe = eps(baseElements, xex, xey, xea);
 
                             if (fe < fr)

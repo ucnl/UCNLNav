@@ -39,6 +39,7 @@
     <Compile Include="Algorithms.cs" />
     <Compile Include="GeoPoints.cs" />
     <Compile Include="Navigation.cs" />
+    <Compile Include="PCore2D.cs" />
     <Compile Include="PositioningCore2D.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities.cs" />

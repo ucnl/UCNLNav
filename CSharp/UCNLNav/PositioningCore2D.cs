@@ -77,7 +77,7 @@ namespace UCNLNav
             set { radialErrorThreshold = value; }
         }
 
-        public GeoPoint3D PreviousLocation;
+        public GeoPoint3D PreviousLocation;        
 
         public delegate void ExternalSolverDelegate(IEnumerable<T> basePoints, GeoPoint3D previousLocation, 
             out double lat_deg, out double lon_deg, out double rErr, out int it_cnt);
