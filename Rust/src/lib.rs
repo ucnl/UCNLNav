@@ -21,7 +21,7 @@ const NLM_G                 : f64 = 2.0;
 pub const NLM_DEF_IT_LIMIT  : i32 = 1200;
 
 /// Default precision threhsold for Nelder-Mead (Simplex) optimization algorithm
-pub const NLM_DEF_PREC_THRLD: f64 = 1E-8;
+pub const NLM_DEF_PREC_THRLD: f64 = 1E-12;
 
 
 /// Structure to store two main ellipsoid parameters: Major semi-axis and inverse flattening
@@ -628,8 +628,8 @@ pub fn nlm_3d_solve<T>(eps: Eps3dFunc<T>, base_elements: &[T], x_prev: f64, y_pr
                 // (4) expansion
                 if fr < fxi[0] {
                     xex = x0x + NLM_G * (xrx - x0x);
-                    xey = x0x + NLM_G * (xry - x0x);
-                    xea = x0x + NLM_G * (xra - x0x);
+                    xey = x0y + NLM_G * (xry - x0y);
+                    xea = x0a + NLM_G * (xra - x0a);
                     fe = eps(base_elements, xex, xey, xea);
 
                     if fe < fr {
@@ -1664,67 +1664,43 @@ mod tests {
         let mut base_points = Vec::new();
     
         // random relevant values for actual point position
-        let actual_x = 20.0;
-        let actual_y = -20.0;
-        let actual_z = 20.0;
+        let actual_x = 1.0;
+        let actual_y = 2.0;
+        let actual_z = 3.0;
 
-        let x = -60.0;
-        let y = 20.0;
-        let z = 10.0;
+        let x = -100.0;
+        let y = 150.0;
+        let z = 100.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
         base_points.push((x, y, z, d));
 
-        let x = -20.0;
-        let y = 60.0;
-        let z = 15.0;
+        let x = 100.0;
+        let y = 150.0;
+        let z = -100.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
         base_points.push((x, y, z, d));
     
-        let x = 20.0;
-        let y = 60.0;
-        let z = 20.0;
+        let x = 100.0;
+        let y = -150.0;
+        let z = 100.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
         base_points.push((x, y, z, d));
     
-        let x = 40.0;
-        let y = 10.0;
-        let z = 25.0;
+        let x = -100.0;
+        let y = -150.0;
+        let z = -100.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push((x, y, z, d));
-        
-        let x = 50.0;
-        let y = -20.0;
-        let z = 30.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push((x, y, z, d));
-
-        let x = 30.0;
-        let y = -50.0;
-        let z = 35.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push((x, y, z, d));
-
-        let x = -20.0;
-        let y = -40.0;
-        let z = 35.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push((x, y, z, d));
-
-        let x = -50.0;
-        let y = -20.0;
-        let z = 40.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z);
-        base_points.push((x, y, z, d));
+        base_points.push((x, y, z, d));                
                        
-        let (x_prev, y_prev, z_prev) = centroid_3d_tod(&base_points);
+        let (x_prev, y_prev, z_prev) = centroid_3d_tod(&base_points);        
                 
-        let result = toa_nlm_3d_solve(&base_points, x_prev, y_prev, z_prev, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0);
+        let result = toa_nlm_3d_solve(&base_points, x_prev, y_prev, z_prev, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 3.0);
 
-        assert_approx_eq!(result.0, actual_x, 1.0);
-        assert_approx_eq!(result.1, actual_y, 1.0);
-        assert_approx_eq!(result.2, actual_z, 1.0);
+        assert_approx_eq!(result.0, actual_x, 3.0);
+        assert_approx_eq!(result.1, actual_y, 3.0);
+        assert_approx_eq!(result.2, actual_z, 3.0);
         
-        assert!(result.3 < 1.0, "Residual function greater than limit: {}", result.3);
+        assert!(result.3 < 3.0, "Residual function greater than limit: {}", result.3);
         assert!(result.4 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", result.4);
     }
 
@@ -1735,9 +1711,9 @@ mod tests {
         let velocity = 1500.0;
     
         // random relevant values for actual point position
-        let actual_x = 20.0;
-        let actual_y = -20.0;
-        let actual_z = 20.0;       
+        let actual_x = 1.0;
+        let actual_y = 2.0;
+        let actual_z = 3.0;       
 
         let x = -60.0;
         let y = 20.0;
@@ -1745,8 +1721,8 @@ mod tests {
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
         base_points.push((x, y, z, d));
 
-        let x = -20.0;
-        let y = 60.0;
+        let x = 20.0;
+        let y = -60.0;
         let z = 15.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
         base_points.push((x, y, z, d));
@@ -1757,46 +1733,27 @@ mod tests {
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
         base_points.push((x, y, z, d));
     
-        let x = 40.0;
-        let y = 10.0;
+        let x = -40.0;
+        let y = -10.0;
         let z = 25.0;
         let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
         base_points.push((x, y, z, d));
-        
-        let x = 50.0;
-        let y = -20.0;
-        let z = 30.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
-        base_points.push((x, y, z, d));
-
-        let x = 30.0;
-        let y = -50.0;
-        let z = 35.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
-        base_points.push((x, y, z, d));
-
-        let x = -20.0;
-        let y = -40.0;
-        let z = 35.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
-        base_points.push((x, y, z, d));
-
-        let x = -50.0;
-        let y = -20.0;
-        let z = 40.0;
-        let d = dist_3d(x, y, z, actual_x, actual_y, actual_z) / velocity;
-        base_points.push((x, y, z, d));
+                
                        
-        let (x_prev, y_prev, z_prev) = centroid_3d_tod(&base_points);
+        //let (x_prev, y_prev, z_prev) = centroid_3d_tod(&base_points);
+        let x_prev = 0.0;
+        let y_prev = 0.0;
+        let z_prev = 0.0;
+
         let base_lines = build_base_lines(&base_points, velocity);
                     
         let result = tdoa_nlm_3d_solve(&base_lines, x_prev, y_prev, z_prev, NLM_DEF_IT_LIMIT, NLM_DEF_PREC_THRLD, 10.0);
 
         assert_approx_eq!(result.0, actual_x, 1.0);
         assert_approx_eq!(result.1, actual_y, 1.0);
-        assert_approx_eq!(result.2, actual_z, 1.0);
+        assert_approx_eq!(result.2, actual_z, 5.0);
         
-        assert!(result.3 < 1.0, "Residual function greater than limit: {}", result.3);
+        assert!(result.3 < 3.0, "Residual function greater than limit: {}", result.3);
         assert!(result.4 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", result.4);
     }
 
