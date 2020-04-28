@@ -106,8 +106,8 @@ function [ x_best, y_best, z_best, rerr, it_cnt ] = Nav_nlm_3d_solve(eps, base_e
                 % (4) expansion
                 if fr < fxi(1)
                     xex = x0x + NLM_G * (xrx - x0x);
-                    xey = x0x + NLM_G * (xry - x0x);
-                    xea = x0x + NLM_G * (xra - x0x);
+                    xey = x0y + NLM_G * (xry - x0y);
+                    xea = x0a + NLM_G * (xra - x0a);
                     fe = eps(base_elements, xex, xey, xea);
 
                     if fe < fr
