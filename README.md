@@ -5,7 +5,7 @@
 This library contains routines for:
 - Solving geodetic problems (C#/Rust/Matlab)
 - Solving TDOA & TOA positioning/navigation problems in 2D & 3D (C#/Rust/Matlab)
-- Solving AOA (angle of arrival) navigation problem (C#/Rust/Matlab)
+- Solving AOA (angle of arrival) navigation problem in 2D (C#/Rust/Matlab)
 - Algorithms for Virtual Long Baseline positioning (C#)  
 
 # Example of TDOA problem
