@@ -17,12 +17,15 @@ const NLM_R                 : f64 = 0.5;
 const NLM_Q                 : f64 = 0.5;
 const NLM_G                 : f64 = 2.0;
 
-/// Default iterations limit for Nelder-Mead (Simplex) optimization algorithm
+/// Default iterations limit for Nelder-Mead optimization algorithm
 pub const NLM_DEF_IT_LIMIT  : i32 = 1200;
 
-/// Default precision threhsold for Nelder-Mead (Simplex) optimization algorithm
+/// Default precision threhsold for Nelder-Mead optimization algorithm
 pub const NLM_DEF_PREC_THRLD: f64 = 1E-12;
 
+/// Default iterations limit for Newton-Gauss optimization algorithm
+pub const AOA_NG_DEF_IT_LIMIT: i32 = 1000;
+pub const AOA_NG_DEF_PREC_THRLD: f64 = 1E-12;
 
 /// Structure to store two main ellipsoid parameters: Major semi-axis and inverse flattening
 pub struct EllipsoidDescriptor {
@@ -711,7 +714,7 @@ pub fn tdoa_nlm_3d_solve(base_lines: &[(f64, f64, f64, f64, f64, f64, f64)],  x_
 pub fn get_nearest_item_index(base_points: &[(f64, f64, f64, f64)]) -> usize {
 
     let mut nrst_idx = 0;
-    let mut min_dst: f64 = f64::MIN;
+    let mut min_dst: f64 = f64::MAX;
 
     for (idx, base_point) in base_points.iter().enumerate() {
         if base_point.3 < min_dst {
@@ -988,12 +991,12 @@ pub fn build_base_lines(base_points: &[(f64, f64, f64, f64)], velocity: f64) -> 
     let mut result = Vec::new();
 
     for i in 0..base_points.len() - 1 {
-        for j in i..base_points.len() {
+        for j in (i + 1)..base_points.len() {
             result.push((base_points[i].0, base_points[i].1, base_points[i].2,
                          base_points[j].0, base_points[j].1, base_points[j].2,
                          (base_points[i].3 - base_points[j].3) * velocity));
         }
-    }        
+    }
 
     (result)
 }
@@ -1132,6 +1135,66 @@ pub fn tdoa_locate_3d(bases: &[(f64, f64, f64, f64)],
 }
 
 
+pub fn tdoa_aoa_ng_2d_solve(bases: &[(f64, f64, f64, f64)], velocity: f64,
+    max_iterations: i32, precision_threshold: f64) -> (f64, i32) {
+
+    // the earliest sensor
+    let earliest_sensor_idx = get_nearest_item_index(bases);    
+
+    // estimate the first approximation
+    let a0 = (bases[earliest_sensor_idx].1).atan2(bases[earliest_sensor_idx].0);
+         
+    let mut a_rad = a0;
+    let mut it_cnt = 0;
+
+    let mut dr = Vec::new();
+    let mut dx = Vec::new();
+    let mut dy = Vec::new();    
+
+    for i in 0..bases.len() - 1 {
+        for j in (i + 1)..bases.len() {
+            
+            dr.push((bases[i].3 - bases[j].3) * velocity);
+            dx.push(bases[i].0 - bases[j].0);
+            dy.push(bases[i].1 - bases[j].1);          
+        }
+    }  
+
+    let mut y;
+    let mut y_prev = a_rad;
+
+    let mut dfda: f64;
+    let mut fa0: f64;
+    let mut dfda2: f64;
+    let mut dfdafa0: f64;
+
+    let mut done = false;
+
+    while !done {
+           
+        dfda2 = 0.0;
+        dfdafa0 = 0.0;
+        for i in 0..dr.len() {
+            
+            dfda = -dx[i] * a_rad.sin() + dy[i] * a_rad.cos();       
+            fa0 = dx[i] * a_rad.cos() + dy[i] * a_rad.sin() + dr[i];
+            dfda2 += dfda * dfda;
+            dfdafa0 += dfda * fa0;
+        }
+                
+        y = dfdafa0 / dfda2;        
+        a_rad = a_rad - y;        
+
+        if (it_cnt > max_iterations) || ((y - y_prev).abs() < precision_threshold) {
+            done = true;
+        } else {
+            y_prev = y;
+            it_cnt += 1;
+        }
+    }
+        
+    (a_rad, it_cnt)
+}
 
 
 #[macro_export]
@@ -1991,5 +2054,48 @@ mod tests {
         
         assert!(tdoa_3d_result.3 < start_dst_projection_m * 0.01, "Residual function greater than limit (1%): {}", tdoa_3d_result.3);
         assert!(tdoa_3d_result.4 < NLM_DEF_IT_LIMIT, "Method did not converge: iterations limit exeeded {}", tdoa_3d_result.4);
+    }
+
+    #[test]
+    fn test_tdoa_aoa_ng_2d_solve() {
+
+        let aoa_target_range_m = 1000.0;
+        let aoa_n_base_points = 4;
+        let aoa_base_size_m = 1.5;
+        let propagation_velocity = 1450.0;
+        let mut aoa_base_points = Vec::new();
+        
+        for n in 0..aoa_n_base_points {
+           let az_ = (n as f64) * 2.0 * consts::PI / (aoa_n_base_points as f64);
+           let base_x = aoa_base_size_m * az_.cos();
+           let base_y = aoa_base_size_m * az_.sin();
+           let base_z = 0.0;
+           aoa_base_points.push((base_x, base_y, base_z, 0.0));   
+        }
+                
+        for actual_angle in 0..359 {
+            let actual_angle_rad = (actual_angle as f64) * PI_DBY_180;
+            let target_x = aoa_target_range_m * actual_angle_rad.cos();
+            let target_y = aoa_target_range_m * actual_angle_rad.sin();
+            let target_z = 0.0;
+                  
+            for n in 0..aoa_base_points.len() {
+                aoa_base_points[n].3 = dist_3d(aoa_base_points[n].0, aoa_base_points[n].1, aoa_base_points[n].2,
+                    target_x, target_y, target_z) / propagation_velocity;   
+                }                   
+              
+            let a_result = tdoa_aoa_ng_2d_solve(&aoa_base_points, propagation_velocity, AOA_NG_DEF_IT_LIMIT, AOA_NG_DEF_PREC_THRLD);
+            
+            let mut aoa_angular_error = actual_angle_rad - a_result.0;
+            
+            if aoa_angular_error > consts::PI {
+                aoa_angular_error = PI2 - aoa_angular_error;
+            }        
+           
+            aoa_angular_error *= D180_DBY_PI;
+            
+            assert!(a_result.1 < AOA_NG_DEF_IT_LIMIT, "Number of iterations exceeded specified limit (1%): {}", a_result.1);
+            assert_approx_eq!(aoa_angular_error, 0.0, 1E-3);
+        }
     }
 }
