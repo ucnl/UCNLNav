@@ -5,6 +5,7 @@
 This library contains routines for:
 - Solving geodetic problems (C#/Rust/Matlab)
 - Solving TDOA & TOA positioning/navigation problems in 2D & 3D (C#/Rust/Matlab)
+- Solving AOA (angle of arrival) navigation problem (C#/Rust/Matlab)
 - Algorithms for Virtual Long Baseline positioning (C#)  
 
 # Example of TDOA problem
@@ -29,6 +30,11 @@ If this repository achieves:
 - 150 stars - we'll add complete documentation for the library  
 
 ## HISTORY
+
+19-AUG-2020 Update
+* Some bugfixes and small improvements
+* Added AOA (Angle of arrival) estimation routines, for more info, please, see Matlab demo script:
+- [AOA estimation with noisy TOA measurements](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_AOA_tests.m)
 
 23-JAN-2020 Update:
 * Added partial implementation of the library in Matlab  
