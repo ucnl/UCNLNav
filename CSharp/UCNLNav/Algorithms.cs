@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace UCNLNav
 {
@@ -34,7 +35,10 @@ namespace UCNLNav
         static readonly double NLM_G = 2.0;
 
         public static readonly int    NLM_DEF_IT_LIMIT = 600;
-        public static readonly double NLM_DEF_PREC_THRLD = 1E-10;
+        public static readonly double NLM_DEF_PREC_THRLD = 1E-12;
+
+        public static readonly int    HJS_DEF_IT_LIMIT = 600;
+        public static readonly double HJS_DEF_PREC_THRLD = 1E-4;
 
         #endregion
 
@@ -53,8 +57,11 @@ namespace UCNLNav
         public static readonly double PI_DBY_180 = Math.PI / 180.0;
         public static readonly double D180_DBY_PI = 180.0 / Math.PI;
 
-        public static readonly int    VNC_DEF_IT_LIMIT = 200;
+        public static readonly int    VNC_DEF_IT_LIMIT = 2000;
         public static readonly double VNC_DEF_EPSILON = 1E-12;        
+
+        public static readonly int    AOA_NG_DEF_IT_LIMIT = 100;
+        public static readonly double AOA_NG_DEF_PREC_THRLD = 1E-12;
 
         #region Methods
 
@@ -512,6 +519,367 @@ namespace UCNLNav
             return result;
         }
 
+        #region Hooke-Jeeves 
+
+        /// <summary>
+        /// Finds minimum of specifief residual function by Hooke-Jeeves method (2D - x and y)
+        /// </summary>
+        /// <typeparam name="T">Can be TOABasePoint or TDOABaseLine</typeparam>
+        /// <param name="eps">residual function</param>
+        /// <param name="baseElements">a set of base elements of type T</param>
+        /// <param name="xPrev">previous solution x coordinate</param>
+        /// <param name="yPrev">previous solution y coordinate</param>
+        /// <param name="z">z coordinate (depth), suppose to be a constant (known by direct measurement)</param>
+        /// <param name="maxIterations">iterations limit</param>
+        /// <param name="precisionThreshold">precision threshold (maximal step site to stop the algorithm)</param>
+        /// <param name="simplexSize">initial size of the simplex</param>
+        /// <param name="xBest">x coordinate of minimum</param>
+        /// <param name="yBest">y coordinate of minimum</param>
+        /// <param name="radialError">radial error, m</param>
+        /// <param name="itCnt">number of iterations taken</param>
+        public static void HJS2D_Solve<T>(Func<T[], double, double, double, double> eps,
+                                          T[] baseElements, double xPrev, double yPrev, double z,
+                                          int maxIterations, double precisionThrehsold, double stepSize,
+                                          out double xBest, out double yBest, out double radialError, out int itCnt)
+        {
+            #region Hooke-Jeeves 2D optimization
+
+            double x0 = xPrev;
+            double y0 = yPrev;
+            double f0 = eps(baseElements, x0, y0, z);
+            itCnt = 0;
+
+            double dx = stepSize;
+            double dy = stepSize;
+
+            double x1 = x0, y1 = y0, f1 = f0, x2, y2, f2, f1t;
+
+            while (((dx > precisionThrehsold) || (dy > precisionThrehsold)) && (itCnt < maxIterations))
+            {
+                #region explore around x1
+                                              
+                f1t = eps(baseElements, x1 + dx, y1, z);
+                if (f1t > f0)
+                {                    
+                    f1t = eps(baseElements, x1 - dx, y1, z);
+                    if (f1t > f0)
+                    {
+                        dx /= 2.0;
+                    }
+                    else
+                    {
+                        x1 -= dx;
+                        f1 = f1t;                        
+                    }
+                }
+                else
+                {
+                    x1 += dx;
+                    f1 = f1t;
+                }
+
+                f1t = eps(baseElements, x1, y1 + dy, z);
+                if (f1t > f0)
+                {
+                    f1t = eps(baseElements, x1, y1 - dy, z);
+                    if (f1t > f0)
+                    {
+                        dy /= 2.0;
+                    }
+                    else
+                    {
+                        y1 -= dy;
+                        f1 = f1t;
+                    }
+                }
+                else
+                {
+                    y1 += dy;
+                    f1 = f1t;
+                }
+
+                #endregion
+
+                while ((f1 < f0) && (itCnt < maxIterations))
+                {
+                    x2 = x1 * 2 - x0;
+                    y2 = y1 * 2 - y0;
+                    f2 = eps(baseElements, x2, y2, z);
+
+                    #region explore around x2
+
+                    f1t = eps(baseElements, x2 + stepSize, y2, z);
+                    if (f1t > f2)
+                    {
+                        f1t = eps(baseElements, x2 - stepSize, y2, z);
+                        if (f1t <= f2)                       
+                        {
+                            x2 -= stepSize;
+                            f2 = f1t;
+                        }
+                    }
+                    else
+                    {
+                        x2 += stepSize;
+                        f2 = f1t;
+                    }
+
+                    f1t = eps(baseElements, x2, y2 + stepSize, z);
+                    if (f1t > f2)
+                    {
+                        f1t = eps(baseElements, x2, y2 - stepSize, z);
+                        if (f1t <= f2)                        
+                        {
+                            y2 -= stepSize;
+                            f2 = f1t;
+                        }
+                    }
+                    else
+                    {
+                        y2 += stepSize;
+                        f2 = f1t;
+                    }
+
+                    #endregion
+
+                    x0 = x1;
+                    y0 = y1;
+                    f0 = f1;
+
+                    if (f2 <= f1)                    
+                    {                        
+                        x1 = x2;
+                        y1 = y2;
+                        f1 = f2;
+                        itCnt++;
+                    }                    
+                }
+
+                itCnt++;
+            }
+
+            #endregion     
+       
+            xBest = x0;
+            yBest = y0;
+            radialError = Math.Sqrt(f0);
+        }
+
+        /// <summary>
+        /// Finds minimum of specifief residual function by Hooke-Jeeves (simplex) method (3D - x, y and z)
+        /// </summary>
+        /// <typeparam name="T">Can be TOABasePoint or TDOABaseLine</typeparam>
+        /// <param name="eps">residual function</param>
+        /// <param name="baseElements">a set of base elements of type T</param>
+        /// <param name="xPrev">previous solution x coordinate</param>
+        /// <param name="yPrev">previous solution y coordinate</param>
+        /// <param name="zPrev">previous solution z coordinate (depth)</param>
+        /// <param name="maxIterations">iterations limit</param>
+        /// <param name="precisionThreshold">precision threshold</param>
+        /// <param name="stepSize">initial size of steps</param>
+        /// <param name="xBest">x coordinate of minimum</param>
+        /// <param name="yBest">y coordinate of minimum</param>
+        /// <param name="zBest">z coordinate of minimum</param>
+        /// <param name="radialError">radial error, m</param>
+        /// <param name="itCnt">number of iterations taken</param>
+        public static void HJS3D_Solve<T>(Func<T[], double, double, double, double> eps,
+                                          T[] baseElements, double xPrev, double yPrev, double zPrev,
+                                          int maxIterations, double precisionThreshold, double stepSize,
+                                          out double xBest, out double yBest, out double zBest, out double radialError, out int itCnt)
+        {
+            #region Hooke-Jeeves 3D optimization
+
+            double x0 = xPrev;
+            double y0 = yPrev;
+            double z0 = zPrev;
+            double f0 = eps(baseElements, x0, y0, z0);
+            itCnt = 0;
+
+            double dx = stepSize;
+            double dy = stepSize;
+            double dz = stepSize;
+
+            double x1 = x0, y1 = y0, z1 = z0, f1 = f0, x2, y2, z2, f2, f1t;
+
+            while (((dx > precisionThreshold) || (dy > precisionThreshold) || (dz > precisionThreshold)) && (itCnt < maxIterations))
+            {
+                #region explore around x1
+
+                #region x coordinate
+
+                f1t = eps(baseElements, x1 + dx, y1, z1);
+                if (f1t > f0)
+                {
+                    f1t = eps(baseElements, x1 - dx, y1, z1);
+                    if (f1t > f0)
+                    {
+                        dx /= 2.0;
+                    }
+                    else
+                    {
+                        x1 -= dx;
+                        f1 = f1t;
+                    }
+                }
+                else
+                {
+                    x1 += dx;
+                    f1 = f1t;
+                }
+
+                #endregion
+
+                #region y coordinate
+
+                f1t = eps(baseElements, x1, y1 + dy, z1);
+                if (f1t > f0)
+                {
+                    f1t = eps(baseElements, x1, y1 - dy, z1);
+                    if (f1t > f0)
+                    {
+                        dy /= 2.0;
+                    }
+                    else
+                    {
+                        y1 -= dy;
+                        f1 = f1t;
+                    }
+                }
+                else
+                {
+                    y1 += dy;
+                    f1 = f1t;
+                }
+
+                #endregion
+
+                #region z coordinate
+
+                f1t = eps(baseElements, x1, y1, z1 + dz);
+                if (f1t > f0)
+                {
+                    f1t = eps(baseElements, x1, y1, z1 - dz);
+                    if (f1t > f0)
+                    {
+                        dz /= 2.0;
+                    }
+                    else
+                    {
+                        z1 -= dy;
+                        f1 = f1t;
+                    }
+                }
+                else
+                {
+                    z1 += dz;
+                    f1 = f1t;
+                }
+
+                #endregion
+
+                #endregion
+
+                while ((f1 < f0) && (itCnt < maxIterations))
+                {
+                    x2 = x1 * 2 - x0;
+                    y2 = y1 * 2 - y0;
+                    z2 = z1 * 2 - z0;
+                    f2 = eps(baseElements, x2, y2, z2);
+
+                    #region explore around x2
+
+                    #region x coordinate
+
+                    f1t = eps(baseElements, x2 + stepSize, y2, z2);
+                    if (f1t > f2)
+                    {
+                        f1t = eps(baseElements, x2 - stepSize, y2, z2);
+                        if (f1t <= f2)
+                        {
+                            x2 -= stepSize;
+                            f2 = f1t;
+                        }
+                    }
+                    else
+                    {
+                        x2 += stepSize;
+                        f2 = f1t;
+                    }
+
+                    #endregion
+
+                    #region y coordinate
+
+                    f1t = eps(baseElements, x2, y2 + stepSize, z2);
+                    if (f1t > f2)
+                    {
+                        f1t = eps(baseElements, x2, y2 - stepSize, z2);
+                        if (f1t <= f2)
+                        {
+                            y2 -= stepSize;
+                            f2 = f1t;
+                        }
+                    }
+                    else
+                    {
+                        y2 += stepSize;
+                        f2 = f1t;
+                    }
+
+                    #endregion
+
+                    #region z coordinate
+
+                    f1t = eps(baseElements, x2, y2, z2 + stepSize);
+                    if (f1t > f2)
+                    {
+                        f1t = eps(baseElements, x2, y2, z2 - stepSize);
+                        if (f1t <= f2)
+                        {
+                            z2 -= stepSize;
+                            f2 = f1t;
+                        }
+                    }
+                    else
+                    {
+                        z2 += stepSize;
+                        f2 = f1t;
+                    }
+
+                    #endregion
+
+                    #endregion
+
+                    x0 = x1;
+                    y0 = y1;
+                    z0 = z1;
+                    f0 = f1;
+
+                    if (f2 <= f1)
+                    {
+                        x1 = x2;
+                        y1 = y2;
+                        z1 = z2;
+                        f1 = f2;
+                        itCnt++;
+                    }
+                }
+
+                itCnt++;
+            }
+
+            #endregion
+
+            xBest = x0;
+            yBest = y0;
+            zBest = z0;
+            radialError = Math.Sqrt(f0);
+        }
+
+        #endregion
+
+        #region Helder-Mead solvers
+
         /// <summary>
         /// Finds minimum of specifief residual function by Nelder-Mead (simplex) method (2D - x and y)
         /// </summary>
@@ -871,6 +1239,8 @@ namespace UCNLNav
             radialError = Math.Sqrt(eps(baseElements, xBest, yBest, zBest));
         }
 
+        #endregion
+       
         /// <summary>
         /// Solves navigation problem: finds target location by TOA (by base points with known location and distances to them)
         /// with Nelder-Mead (simplex) algorithm. 2D problem (x and y are variables, z is supposed to be known by direct measurement)
@@ -1082,18 +1452,58 @@ namespace UCNLNav
             radialError = Math.Sqrt(Eps_TOA3D(basePoints, xBest, yBest, z));
         }
 
-        public static void TDOA_AOA_NG_Estimate(TOABasePoint[] basePoints,
-                                                double z,
+        public static void TDOA_AOA_NG_2d_Solve(TOABasePoint[] basePoints,
+                                                double velocity,
                                                 int maxIterations, double precisionThreshold,
-                                                out double h_angle,
-                                                out double residual, out int itCnt)
+                                                out double h_angle_rad,
+                                                out int itCnt)
         {
 
-            throw new NotImplementedException();
+            // the earliest sensor
+            int earliest_sensor_idx = GetNearestItemIndex(basePoints);
+            
+            // estimate the first approximation
+            double a0 = Math.Atan2(basePoints[earliest_sensor_idx].Y, basePoints[earliest_sensor_idx].X);         
+            h_angle_rad = a0;            
+            itCnt = 0;
 
+            List<double> dr = new List<double>();
+            List<double> dx = new List<double>();
+            List<double> dy = new List<double>();
 
+            for (int i = 0; i < basePoints.Length - 1; i++)
+            {
+                for (int j = i + 1; j < basePoints.Length; j++)    
+                {
+                    dr.Add((basePoints[i].D - basePoints[j].D) * velocity);
+                    dx.Add(basePoints[i].X - basePoints[j].X);
+                    dy.Add(basePoints[i].Y - basePoints[j].Y);          
+                }
+            }  
+        
+            double y = -h_angle_rad, y_prev = h_angle_rad;
+            double dfda, fa0, dfda2, dfdafa0;
+
+            do {
+                y_prev = y;
+                dfda2 = 0.0;
+                dfdafa0 = 0.0;
+                for (int i = 0; i < dr.Count; i++)
+                {
+            
+                    dfda = -dx[i] * Math.Sin(h_angle_rad) + dy[i] * Math.Cos(h_angle_rad);
+                    fa0 = dx[i] * Math.Cos(h_angle_rad) + dy[i] * Math.Sin(h_angle_rad) + dr[i];
+                    dfda2 += dfda * dfda;
+                    dfdafa0 += dfda * fa0;
+                }
+                
+                y = dfdafa0 / dfda2;        
+                h_angle_rad -= y;
+                itCnt++;
+
+        
+            } while ((itCnt < maxIterations) && (Math.Abs(y - y_prev) > precisionThreshold));        
         }
-
 
         #endregion
 

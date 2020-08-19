@@ -151,10 +151,20 @@ namespace UCNLNav
 
         public void ProcessBasePoints(IEnumerable<T> basePoints)
         {
-            ProcessBasePoints(basePoints, DateTime.Now);            
+            ProcessBasePoints(basePoints, targetLocation.Depth, DateTime.Now);
+        }
+
+        public void ProcessBasePoints(IEnumerable<T> basePoints, double depth)
+        {
+            ProcessBasePoints(basePoints, depth, DateTime.Now);
         }
 
         public void ProcessBasePoints(IEnumerable<T> basePoints, DateTime timeStamp)
+        {
+            ProcessBasePoints(basePoints, targetLocation.Depth, timeStamp);
+        }
+
+        public void ProcessBasePoints(IEnumerable<T> basePoints, double depth, DateTime timeStamp)
         {
             double lat_deg, lon_deg, rErr;
             int it_Cnt;
@@ -162,7 +172,7 @@ namespace UCNLNav
             if (typeof(GeoPoint3DD).IsAssignableFrom(typeof(T)))
             {
                 UCNLNav.Navigation.TOA_Locate2D(basePoints.Cast<GeoPoint3DD>().ToArray<GeoPoint3DD>(),
-                    targetLocation.Latitude, targetLocation.Longitude, targetLocation.Depth,
+                    targetLocation.Latitude, targetLocation.Longitude, depth,
                     Algorithms.NLM_DEF_IT_LIMIT, Algorithms.NLM_DEF_PREC_THRLD, simplexSize,
                     referenceEllipsoid,
                     out lat_deg, out lon_deg, out rErr, out it_Cnt);
@@ -170,7 +180,7 @@ namespace UCNLNav
             else if (typeof(GeoPoint3DT).IsAssignableFrom(typeof(T)))
             {
                 UCNLNav.Navigation.TDOA_Locate2D(basePoints.Cast<GeoPoint3DT>().ToArray<GeoPoint3DT>(),
-                    targetLocation.Latitude, targetLocation.Longitude, targetLocation.Depth,
+                    targetLocation.Latitude, targetLocation.Longitude, depth,
                     Algorithms.NLM_DEF_IT_LIMIT, Algorithms.NLM_DEF_PREC_THRLD, simplexSize,
                     referenceEllipsoid, soundSpeed,
                     out lat_deg, out lon_deg, out rErr, out it_Cnt);
