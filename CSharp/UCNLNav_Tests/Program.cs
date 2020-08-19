@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Collections.Generic;
 using UCNLNav;
@@ -15,8 +15,8 @@ namespace UCNLNav_Tests
             double base_z_step = 5; // base z-coordinate step
 
             // actual target location
-            double actual_target_lat_deg = 44.12345678; // singed degrees
-            double actual_target_lon_deg = 48.12345678; // signed degrees
+            double actual_target_lat_deg = 44.505455; // singed degrees
+            double actual_target_lon_deg = 48.547659; // signed degrees
             double actual_target_z = 25;                // meters
             
             double start_dst_projection = 500;          // start distance from target, meters
@@ -387,6 +387,68 @@ namespace UCNLNav_Tests
             Console.WriteLine(string.Format("First approximation (x, y, z): ({0:F03}, {1:F03}, {2:F03})", x_prev, y_prev, z_prev));
             Console.WriteLine(string.Format("Estimated location (x, y, z): ({0:F03}, {1:F03}, {2:F03})", x_best, y_best, z_best));
             Console.WriteLine(string.Format("Radial error: {0:F03} m, iterations: {1}", radialError, it_cnt));
+
+            //
+            Console.WriteLine();
+            Console.WriteLine("\r\nPress a key to start TDOA_AOA_NG_2d_Solve() tests...");
+            Console.ReadKey();
+
+            double aoa_max_error = 0;
+
+            double aoa_target_range_m = 1000.0;
+            int aoa_n_base_points = 4;
+            double aoa_base_size_m = 1.5;
+
+            base_points = new List<TOABasePoint>();            
+        
+            for (int i = 0; i < aoa_n_base_points; i++)
+            {
+               double az_ = i * 2.0 * Math.PI / aoa_n_base_points;
+               double base_x = aoa_base_size_m * Math.Cos(az_);
+               double base_y = aoa_base_size_m * Math.Sin(az_);
+               base_z = 0.0;
+               base_points.Add(new TOABasePoint(base_x, base_y, base_z, 0.0));   
+            }
+                
+            var bpoints = base_points.ToArray();
+
+            for (int actual_angle = 180; actual_angle <= 359; actual_angle++)
+            {
+                double actual_angle_rad = actual_angle * Math.PI / 180;
+                double target_x = aoa_target_range_m * Math.Cos(actual_angle_rad);
+                double target_y = aoa_target_range_m * Math.Sin(actual_angle_rad);
+                target_z = 0.0;
+                  
+                for (int n = 0; n < bpoints.Length; n++)
+                {                    
+                    bpoints[n].D = Algorithms.Dist3D(base_points[n].X, base_points[n].Y, base_points[n].Z,
+                        target_x, target_y, target_z) / velocity;   
+                    }                   
+              
+                double a_result_rad = 0;
+                Algorithms.TDOA_AOA_NG_2d_Solve(bpoints, velocity, Algorithms.AOA_NG_DEF_IT_LIMIT, Algorithms.AOA_NG_DEF_PREC_THRLD,
+                    out a_result_rad, out it_cnt);
+            
+                double aoa_angular_error = actual_angle_rad - a_result_rad;
+            
+                if (aoa_angular_error > Math.PI) 
+                {
+                    aoa_angular_error = Math.PI * 2 - aoa_angular_error;
+                }        
+           
+                aoa_angular_error *= (180 / Math.PI);
+
+                if (Math.Abs(aoa_angular_error) > Math.Abs(aoa_max_error))
+                {
+                    aoa_max_error = aoa_angular_error;
+                }                
+            }
+
+
+            Console.WriteLine(string.Format("AOA baseline size: {0:F03} m", aoa_base_size_m));
+            Console.WriteLine(string.Format("AOA mean distance to target: {0:F03} m", aoa_target_range_m));
+            Console.WriteLine(string.Format("AOA Full circle maximal error: {0:F06}°", aoa_max_error));
+
 
             Console.WriteLine();
             Console.WriteLine("Press a key to exit...");
