@@ -3,7 +3,9 @@ function [ result ] = Nav_eps_tdoa3d(base_lines, x, y, z)
 
 result = 0.0;
 
-for n = 1:length(base_lines)
+[n_lines, nc] = size(base_lines);
+
+for n = 1:n_lines
    
    result = result + (sqrt((base_lines(n, 1) - x)^2 +...
                            (base_lines(n, 2) - y)^2 +...

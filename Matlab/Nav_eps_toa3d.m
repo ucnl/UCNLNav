@@ -8,8 +8,10 @@
 function [ result ] = Nav_eps_toa3d(base_points, x, y, z)
     
 result = 0.0;
+
+[nBases, nc] = size(base_points);
     
-for n = 1:length(base_points)
+for n = 1:nBases
    
     result = result + (sqrt((base_points(n, 1) - x)^2 +...
                             (base_points(n, 2) - y)^2 +...

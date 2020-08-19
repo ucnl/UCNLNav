@@ -3,13 +3,33 @@ close all;
 clear all;%variables;
 clc;
 
-VNC_DEF_IT_LIMIT = 2000;   % Default iterations limit for Vincenty algorithms
-VNC_DEF_EPSILON = 1E-12;   % Default precision threhsold for Vincenty algorithms
-NLM_DEF_IT_LIMIT = 1200;   % Default iterations limit for Nelder-Mead (Simplex) optimization algorithm
-NLM_DEF_PREC_THRLD = 1E-8; % Default precision threhsold for Nelder-Mead (Simplex) optimization algorithm
+VNC_DEF_IT_LIMIT = 2000;    % Default iterations limit for Vincenty algorithms
+VNC_DEF_EPSILON = 1E-12;    % Default precision threshold for Vincenty algorithms
+NLM_DEF_IT_LIMIT = 1200;    % Default iterations limit for Nelder-Mead optimization algorithm
+NLM_DEF_PREC_THRLD = 1E-8;  % Default precision threshold for Nelder-Mead optimization algorithm
+
+AOA_DEF_IT_LIMIT = 100;     % Default iterations limit for Newton-Gauss in AOA estimation algorithm
+AOA_DEF_PREC_THRLD = 1E-12; % Default precision threshold for Newton-Gauss in AOA estimation algorithm
 
 propagation_velocity = 1500.0; % in m/s
 el = Nav_build_standard_ellipsoid('WGS84');
+
+
+
+sp_lat_deg = 48.073566;
+sp_lon_deg = -123.02983;
+ep_lat_deg = 48.064458;
+ep_lon_deg = -123.02983;
+
+sp_lat_rad = degtorad(sp_lat_deg);
+sp_lon_rad = degtorad(sp_lon_deg);
+ep_lat_rad = degtorad(ep_lat_deg);
+ep_lon_rad = degtorad(ep_lon_deg);
+
+adist_m0 = Nav_haversine_inverse(sp_lat_rad, sp_lon_rad, ep_lat_rad, ep_lon_rad, el.mjsa_m);
+adist_m100 = Nav_haversine_inverse(sp_lat_rad, sp_lon_rad, ep_lat_rad, ep_lon_rad, el.mjsa_m - 1000);
+
+adist_m0 - adist_m100
 
 
 %%
@@ -335,11 +355,11 @@ fprintf('Ok\n');
 
 %%
 fprintf('[ Testing ] Nav_tdoa_nlm_3d_solve with no measurements noise...');
-base_points = zeros(8, 4);
+base_points = zeros(4, 4);
 % random relevant values for actual point position
-actual_x = 20.0;
-actual_y = -20.0;
-actual_z = 20.0;       
+actual_x = 1;
+actual_y = 2;
+actual_z = 3;       
 
 x = -60.0;
 y = 20.0;
@@ -347,8 +367,8 @@ z = 10.0;
 d = Nav_dist_3d(x, y, z, actual_x, actual_y, actual_z) / propagation_velocity;
 base_points(1, :) = [ x y z d ];
 
-x = -20.0;
-y = 60.0;
+x = 20.0;
+y = -60.0;
 z = 15.0;
 d = Nav_dist_3d(x, y, z, actual_x, actual_y, actual_z) / propagation_velocity;
 base_points(2, :) = [ x y z d ];
@@ -359,35 +379,11 @@ z = 20.0;
 d = Nav_dist_3d(x, y, z, actual_x, actual_y, actual_z) / propagation_velocity;
 base_points(3, :) = [ x y z d ];
 
-x = 40.0;
-y = 10.0;
+x = -40.0;
+y = -10.0;
 z = 25.0;
 d = Nav_dist_3d(x, y, z, actual_x, actual_y, actual_z) / propagation_velocity;
 base_points(4, :) = [ x y z d ];
-
-x = 50.0;
-y = -20.0;
-z = 30.0;
-d = Nav_dist_3d(x, y, z, actual_x, actual_y, actual_z) / propagation_velocity;
-base_points(5, :) = [ x y z d ];
-
-x = 30.0;
-y = -50.0;
-z = 35.0;
-d = Nav_dist_3d(x, y, z, actual_x, actual_y, actual_z) / propagation_velocity;
-base_points(6, :) = [ x y z d ];
-
-x = -20.0;
-y = -40.0;
-z = 35.0;
-d = Nav_dist_3d(x, y, z, actual_x, actual_y, actual_z) / propagation_velocity;
-base_points(7, :) = [ x y z d ];
-
-x = -50.0;
-y = -20.0;
-z = 40.0;
-d = Nav_dist_3d(x, y, z, actual_x, actual_y, actual_z) / propagation_velocity;
-base_points(8, :) = [ x y z d ];
 
 centroid = Nav_centroid(base_points);
 base_lines = Nav_build_base_lines(base_points, propagation_velocity);
@@ -396,7 +392,7 @@ base_lines = Nav_build_base_lines(base_points, propagation_velocity);
 
 assert_approx_eq(x_best, actual_x, 1.0);
 assert_approx_eq(y_best, actual_y, 1.0);
-assert_approx_eq(z_best, actual_z, 1.0);
+assert_approx_eq(z_best, actual_z, 5.0);
 
 assert_eq(rerr < 1.0, true, sprintf('Residual function value is greater than limit: %d > %d', rerr, 1.0));
 assert_eq(it_cnt < NLM_DEF_IT_LIMIT, true, sprintf('Number of iterations exceeded specified limit: %d >= %d', it_cnt, NLM_DEF_IT_LIMIT));
@@ -424,7 +420,7 @@ dst_inc_step_m = 50.0;          % distance increment
 azimuth_step_rad = pi * 2 / base_number;
 
 actual_target_lat_rad = degtorad(actual_target_lat_deg);
-actual_target_lon_rad = degtorad(actual_target_lon_deg)
+actual_target_lon_rad = degtorad(actual_target_lon_deg);
 
 for base_idx = 1:base_number 
 
@@ -574,8 +570,8 @@ base_number = 4;
 start_base_z_m = 1.5;
 base_z_step_m = 5.0;
 
-actual_target_lat_deg = 44.505455; % singed degrees
-actual_target_lon_deg = 48.547659; % signed degrees
+actual_target_lat_deg = 48.513724; % singed degrees
+actual_target_lon_deg = 44.553248; % signed degrees
 actual_target_z_m = 25.0;          % meters
 
 % generate base points via Vincenty equations
@@ -618,12 +614,59 @@ prev_z_m = nan;
 
 [ dst_m, fwd_az_rad, rev_az_rad, its, is_ok ] = Nav_vincenty_inverse(actual_target_lat_rad, actual_target_lon_rad,... 
     target_lat_deg * pi / 180, target_lon_deg * pi / 180,...
-    el, VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);        
+    el, VNC_DEF_EPSILON, VNC_DEF_IT_LIMIT);
 
 assert_eq(dst_m < start_dst_projection_m * 0.01, true, sprintf('Estimated location is further than limit (%d): %d', start_dst_projection_m * 0.01, dst_m));
 assert_approx_eq(target_z_m, actual_target_z_m, start_dst_projection_m * 0.05);
 assert_eq(rerr < start_dst_projection_m * 0.01, true, sprintf('Residual function value is greater than limit: %d > %d', rerr, start_dst_projection_m * 0.01));
 assert_eq(it_cnt < NLM_DEF_IT_LIMIT, true, sprintf('Number of iterations exceeded specified limit: %d >= %d', it_cnt, NLM_DEF_IT_LIMIT));
+
+fprintf('Ok\n');
+
+
+
+
+%% 
+fprintf('[ Testing ] Nav_aoa_ng_2d_solve...');
+
+aoa_target_range_m = 1000;
+aoa_n_base_points = 4;
+aoa_base_size_m = 3;
+aoa_base_points = zeros(aoa_n_base_points, 4);
+aoa_deg_error = 0.1;
+
+for n = 1:aoa_n_base_points   
+   az_ = (n - 1) * 2 * pi / (aoa_n_base_points);
+   base_x = aoa_base_size_m * cos(az_);
+   base_y = aoa_base_size_m * sin(az_);
+   base_z = 0;
+   aoa_base_points(n, :) = [ base_x base_y base_z 0 ];   
+end
+
+for actual_angle = 0:359
+   actual_angle_rad = actual_angle * pi / 180;
+   target_x = aoa_target_range_m * cos(actual_angle_rad);
+   target_y = aoa_target_range_m * sin(actual_angle_rad);
+   target_z = 0;
+          
+   for n = 1:aoa_n_base_points
+       aoa_base_points(n, 4) = Nav_dist_3d(aoa_base_points(n, 1), aoa_base_points(n, 2), aoa_base_points(n, 3),...
+           target_x, target_y, target_z) / propagation_velocity;              
+   end
+      
+   [a_rad, it_cnt] = Nav_tdoa_aoa_ng_2d_solve(aoa_base_points, AOA_DEF_IT_LIMIT,...
+     AOA_DEF_PREC_THRLD, propagation_velocity);
+   
+   aoa_angular_error = actual_angle_rad - a_rad;
+   if (aoa_angular_error > pi)
+      aoa_angular_error = 2 * pi - aoa_angular_error; 
+   end
+   
+   aoa_angular_error = aoa_angular_error * 180 / pi;
+ 
+   assert_eq(it_cnt < AOA_DEF_IT_LIMIT, true, sprintf('Number of iterations exceeded specified limit: %d >= %d', it_cnt, AOA_DEF_IT_LIMIT));
+   assert_eq(aoa_angular_error < aoa_deg_error, true, sprintf('AOA estimation error exeeded specified limit: %d >= %d', aoa_angular_error, aoa_deg_error));
+end
 
 fprintf('Ok\n');
 

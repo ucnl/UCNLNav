@@ -98,13 +98,13 @@ figure
 semilogx(distances, d_lat_deg, 'r');
 title('Direct geodetic problem: Vincenty vs. Haversine (Latitude difference)');
 xlabel('Distance, m');
-ylabel('Difference, Â°');
+ylabel('Difference, °');
 
 figure
 semilogx(distances, d_lon_deg, 'r');
 title('Direct geodetic problem: Vincenty vs. Haversine (Longitude difference)');
 xlabel('Distance, m');
-ylabel('Difference, Â°');
+ylabel('Difference, °');
 
 figure
 semilogx(distances, v_dist, 'r');
@@ -169,13 +169,13 @@ figure
 semilogx(distances, d_lat_deg, 'r');
 title('Direct geodetic problem: Vincenty vs. Haversine (Latitude difference)');
 xlabel('Distance, m');
-ylabel('Difference, Â°');
+ylabel('Difference, °');
 
 figure
 semilogx(distances, d_lon_deg, 'r');
 title('Direct geodetic problem: Vincenty vs. Haversine (Longitude difference)');
 xlabel('Distance, m');
-ylabel('Difference, Â°');
+ylabel('Difference, °');
 
 figure
 semilogx(distances, v_dist, 'r');
