@@ -34,19 +34,18 @@ If this repository achieves:
 19-AUG-2020 Update
 * Some bugfixes and small improvements
 * Added AOA (Angle of arrival) estimation routines, for more info, please, see Matlab demo script:
-- [AOA estimation with noisy TOA measurements](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_AOA_tests.m)
+  - [AOA estimation with noisy TOA measurements](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_AOA_tests.m)
 
 23-JAN-2020 Update:
-* Added partial implementation of the library in Matlab  
-To test the functionality, please, use:
-- [TOA & TDOA localisation demo script](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_TOA_TDOA_2D_demo.m) 
-- [Geodetic problems: Haversine vs. Vincenty demo](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_Haversine_Vs_Vincenty_demo.m)
-- [Library tests](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_tests.m)  
+* Added partial implementation of the library in Matlab. To test the functionality, please, use:
+  - [TOA & TDOA localisation demo script](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_TOA_TDOA_2D_demo.m) 
+  - [Geodetic problems: Haversine vs. Vincenty demo](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_Haversine_Vs_Vincenty_demo.m)
+  - [Library tests](https://github.com/ucnl/UCNLNav/blob/master/Matlab/Nav_tests.m)  
 
 
 30-NOV-2019 Update:
 * Added partial implementation of the library in Rust:
-- All the functionality from Algorithms.cs & from Navigation.cs
+  - All the functionality from Algorithms.cs & from Navigation.cs
 
 
 22-NOV-2019 Update:  
