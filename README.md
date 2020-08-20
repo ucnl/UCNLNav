@@ -34,6 +34,7 @@ If this repository achieves:
 - DONE! 50 stars - we'll add AoA (Angle of arrival) estimation routines (AOA estimation routines uploaded on 49 stars)  
 - 100 stars - we'll add C implementation of the library  
 - 150 stars - we'll add complete documentation for the library  
+- 250 stars - we'll add JS implementation of the library
 
 ## HISTORY
 
