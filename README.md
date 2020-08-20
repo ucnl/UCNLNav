@@ -1,4 +1,5 @@
-## Wow, guys, thanks for all the stars you gave! I am glad I made something which improves the world.
+## Latest news:
+- Angle-of-arrival routines added on 19-AUG-2020
 
 # UCNLNav
 
