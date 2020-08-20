@@ -1,6 +1,6 @@
 ## Latest news:
 - 19-AUG-2020 
-  - Angle-of-arrival routines added
+  - Angle-of-arrival routines added (C#/Rust/Matlab)
   - Hooke-Jeeves algorithm added in Matlab version for TOA/TDOA problems
 
 # UCNLNav
