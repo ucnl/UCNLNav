@@ -115,6 +115,73 @@ namespace UCNLNav
 
         #endregion
 
+        #region Misc. 
+
+        public static void LinearApproxXY(List<MPoint> points, out double k, out double b, out double a)
+        {
+            double sumx = 0.0;
+            double sumxsq = 0.0;
+            double sumxy = 0.0;
+            double sumy = 0.0;
+            int cnt = 0;
+
+            k = double.NaN;
+            b = double.NaN;
+            a = double.NaN;
+
+            foreach (var point in points)
+            {
+                
+
+                sumx += point.X;
+                sumxsq += point.X * point.X;
+                sumxy += point.X * point.Y;
+                sumy += point.Y;
+                cnt++;
+            }
+
+            if (cnt > 0)
+            {
+                k = (cnt * sumxy - sumx * sumy) / (cnt * sumxsq - sumx * sumx);
+                b = (sumy - k * sumx) / cnt;
+                double x = points[points.Count - 1].X - points[0].X;
+                a = Math.Atan2(k * x, x);
+            }
+        }
+
+        public static void LinearApproxXY(List<MPoint3D> points, out double k, out double b, out double a)
+        {
+            double sumx = 0.0;
+            double sumxsq = 0.0;
+            double sumxy = 0.0;
+            double sumy = 0.0;
+            int cnt = 0;
+
+            k = double.NaN;
+            b = double.NaN;
+            a = double.NaN;
+
+            foreach (var point in points)
+            {
+                sumx += point.X;
+                sumxsq += point.X * point.X;
+                sumxy += point.X * point.Y;
+                sumy += point.Y;
+                cnt++;
+            }
+
+            if (cnt > 0)
+            {
+                k = (cnt * sumxy - sumx * sumy) / (cnt * sumxsq - sumx * sumx);
+                b = (sumy - k * sumx) / cnt;
+                double x = points[points.Count - 1].X - points[0].X;
+                double y = k * x;
+                a = Math.Atan2(y, x);
+            }
+        }       
+
+        #endregion
+
         #region Degrees and meters conversion routines
 
         /// <summary>
@@ -881,7 +948,7 @@ namespace UCNLNav
         #region Helder-Mead solvers
 
         /// <summary>
-        /// Finds minimum of specifief residual function by Nelder-Mead (simplex) method (2D - x and y)
+        /// Finds minimum of specified residual function by Nelder-Mead (simplex) method (2D - x and y)
         /// </summary>
         /// <typeparam name="T">Can be TOABasePoint or TDOABaseLine</typeparam>
         /// <param name="eps">residual function</param>
@@ -1025,7 +1092,7 @@ namespace UCNLNav
                         (fxi[1] - tmp) * (fxi[1] - tmp) +
                         (fxi[2] - tmp) * (fxi[2] - tmp)) / 3.0f;
 
-                isFinished = (++itCnt < maxIterations) && (Math.Sqrt(tmp1) <= precisionThreshold);
+                isFinished = (++itCnt > maxIterations) || (Math.Sqrt(tmp1) <= precisionThreshold);
             }
 
             #endregion

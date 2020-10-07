@@ -34,6 +34,7 @@ namespace UCNLNav
         #endregion
     }
 
+    [Obsolete]
     public class PositioningCore2D<T> where T : GeoPoint3D
     {
         #region Properties

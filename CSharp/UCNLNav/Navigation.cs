@@ -82,8 +82,7 @@ namespace UCNLNav
             {
                 return new MPoint3D(0, 0, 0);
             }
-        }
-
+        }        
 
         public static void GetPointsSTD2D(IEnumerable<MPoint> points, out double sigmax, out double sigmay)
         {

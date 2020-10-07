@@ -24,21 +24,33 @@ namespace UCNLNav
         }
     }
 
-    public class TargetCourseAndSpeedUpdatedEventArgs : EventArgs
+    public class TargetCourseUpdatedEventArgs : EventArgs
     {
         public double Course { get; private set; }
-        public double Speed { get; private set; }
         public DateTime TimeStamp { get; private set; }
 
-        public bool IsSpeedValid
-        {
-            get { return !double.IsNaN(Speed); }
-        }
-
-        public TargetCourseAndSpeedUpdatedEventArgs(double crs, double spd, DateTime ts)
+        public TargetCourseUpdatedEventArgs(double crs, DateTime ts)
         {
             Course = crs;
-            Speed = spd;
+            TimeStamp = ts;
+        }
+    }
+
+    public class TargetLocationUpdatedExEventArgs : EventArgs
+    {
+        public DateTime TimeStamp { get; private set; }
+        public GeoPoint3DE Location { get; private set; }
+        public double Course { get; private set; }
+
+        public TargetLocationUpdatedExEventArgs(GeoPoint3D loc, double rerr, double course, DateTime ts)
+            : this(loc.Latitude, loc.Longitude, loc.Depth, rerr, course, ts)
+        {
+        }
+
+        public TargetLocationUpdatedExEventArgs(double lat, double lon, double dpt, double rerr, double course, DateTime ts)
+        {
+            Location = new GeoPoint3DE(lat, lon, dpt, rerr);
+            Course = course;
             TimeStamp = ts;
         }
     }
@@ -49,7 +61,7 @@ namespace UCNLNav
 
         public static readonly double SimplexSizeDefault = 10.0;
         public static readonly double RadialErrorThresholdDefault = 7.0;
-        public static readonly int MaxIntervalToSpeedEstimationSecDefault = 5;
+        public static readonly int CourseEstimatorFifoSizeDefault = 8;
 
         double soundSpeed = 1500.0;
         public double SoundSpeed
@@ -89,20 +101,7 @@ namespace UCNLNav
                     throw new ArgumentOutOfRangeException();
             }
         }
-
-        int maxIntervalToSpeedEstimationSec;
-        public int MaxIntervalToSpeedEstimationSec
-        {
-            get { return maxIntervalToSpeedEstimationSec; }
-            set
-            {
-                if (value > 0)
-                    maxIntervalToSpeedEstimationSec = value;
-                else
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
+    
         public double TargetDepth
         {
             get { return targetLocation.Depth; }
@@ -123,24 +122,27 @@ namespace UCNLNav
 
         public Ellipsoid referenceEllipsoid { get; private set; }
 
+        CourseEstimatorLA2D crsEstimator;
+
         #endregion
 
         #region Constructor
 
         public PCore2D()
-            : this(RadialErrorThresholdDefault, SimplexSizeDefault, Algorithms.WGS84Ellipsoid, MaxIntervalToSpeedEstimationSecDefault)
+            : this(RadialErrorThresholdDefault, SimplexSizeDefault, Algorithms.WGS84Ellipsoid, CourseEstimatorFifoSizeDefault)
         {
         }
 
-        public PCore2D(double rErrThreshold, double simplexSize, Ellipsoid refEllipsoid, int maxIntToSpeedEstimationSec)
+        public PCore2D(double rErrThreshold, double simplexSize, Ellipsoid refEllipsoid, int courseEstimatorFifoSize)
         {
             targetLocation = new GeoPoint3D(double.NaN, double.NaN, double.NaN);
             targetLocationTS = DateTime.MinValue;
 
+            crsEstimator = new CourseEstimatorLA2D(courseEstimatorFifoSize);
+
             RadialErrorThreshold = rErrThreshold;
             SimplexSize = simplexSize;            
             referenceEllipsoid = refEllipsoid;
-            MaxIntervalToSpeedEstimationSec = maxIntToSpeedEstimationSec;
         }
 
         #endregion
@@ -195,28 +197,12 @@ namespace UCNLNav
             
             if (rErr < radialErrorThreshold)
             {
-                if (IsTargetLocation)
+                crsEstimator.AddPoint(new GeoPoint(lat_deg, lon_deg));
+
+                if (crsEstimator.IsCourse)
                 {
-                    var duration = timeStamp.Subtract(targetLocationTS);
-                    if (duration.TotalSeconds <= maxIntervalToSpeedEstimationSec)
-                    {
-                        var prevLocRad = GeoPoint3D.ToRad(targetLocation);
-                        double currLocLatRad = Algorithms.Deg2Rad(lat_deg);
-                        double currLocLonRad = Algorithms.Deg2Rad(lon_deg);
-                        double d_passed_m = 0, course_fwd_rad = 0, course_rev_rad = 0;
-                        int its = 0;
-
-                        Algorithms.VincentyInverse(prevLocRad.Latitude, prevLocRad.Longitude,
-                            currLocLatRad, currLocLonRad, referenceEllipsoid,
-                            Algorithms.VNC_DEF_EPSILON, Algorithms.VNC_DEF_IT_LIMIT,
-                            out d_passed_m, out course_fwd_rad, out course_rev_rad, out its);
-
-                        double estTargetCourse = Algorithms.Rad2Deg(course_fwd_rad);
-                        double estTargetSpeed = d_passed_m / duration.TotalSeconds;
-                    
-                        TargetCourseSpeedAndCourseUpdatedHandler.Rise(this, 
-                            new TargetCourseAndSpeedUpdatedEventArgs(estTargetCourse, estTargetSpeed, timeStamp));
-                    }
+                    TargetCourseUpdatedHandler.Rise(this,
+                        new TargetCourseUpdatedEventArgs(crsEstimator.Course_deg, timeStamp));
                 }
 
                 targetLocation.Latitude = lat_deg;
@@ -225,6 +211,9 @@ namespace UCNLNav
 
                 TargetLocationUpdatedHandler.Rise(this, 
                     new TargetLocationUpdatedEventArgs(targetLocation, rErr, timeStamp));
+
+                TargetLocationUpdatedExHandler.Rise(this,
+                    new TargetLocationUpdatedExEventArgs(targetLocation, rErr, crsEstimator.Course_deg, timeStamp));
             }
             else
             {
@@ -239,7 +228,8 @@ namespace UCNLNav
         #region Events
 
         public EventHandler<TargetLocationUpdatedEventArgs> TargetLocationUpdatedHandler;
-        public EventHandler<TargetCourseAndSpeedUpdatedEventArgs> TargetCourseSpeedAndCourseUpdatedHandler;
+        public EventHandler<TargetCourseUpdatedEventArgs> TargetCourseUpdatedHandler;
+        public EventHandler<TargetLocationUpdatedExEventArgs> TargetLocationUpdatedExHandler;
         public EventHandler RadialErrorExeedsThrehsoldEventHandler;
 
         #endregion
