@@ -7,7 +7,7 @@
  
 base_points_m = Nav_gcs_to_lcs(bases, el);
 
-[a_rad, it_cnt] = Nav_aoa_ng_2d_solve(base_points_m, max_iterations, ...
+[a_rad, it_cnt] = Nav_tdoa_aoa_ng_2d_solve(base_points_m, max_iterations, ...
      precision_threshold, velocity);
  
 end
