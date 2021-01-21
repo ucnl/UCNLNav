@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UCNLNav.MML;
 
 namespace UCNLNav
 {
@@ -179,6 +180,10 @@ namespace UCNLNav
                 a = Math.Atan2(y, x);
             }
         }       
+
+        #endregion
+
+        #region DOP calculation routines        
 
         #endregion
 

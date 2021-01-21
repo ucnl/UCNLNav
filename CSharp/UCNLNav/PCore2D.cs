@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace UCNLNav
 {
@@ -53,6 +50,36 @@ namespace UCNLNav
             Course = course;
             TimeStamp = ts;
         }
+    }
+
+    public class BaseQualityUpdatedEventArgs : EventArgs
+    {
+        #region Properties
+
+        public TBAQuality TBAState { get; private set; }
+        public double GDOP { get; private set; }
+        public double PDOP { get; private set; }
+        public double HDOP { get; private set; }
+        public double VDOP { get; private set; }
+        public double TDOP { get; private set; }
+        public DOPState DopState { get; private set; }
+
+        #endregion
+
+        #region Constructor
+
+        public BaseQualityUpdatedEventArgs(TBAQuality tbaState, double gdop, double pdop, double hdop, double vdop, double tdop, DOPState dState)
+        {
+            TBAState = tbaState;
+            GDOP = gdop;
+            PDOP = pdop;
+            HDOP = hdop;
+            VDOP = vdop;
+            TDOP = tdop;
+            DopState = dState;
+        }
+
+        #endregion
     }
 
     public class PCore2D<T> where T : GeoPoint3D
@@ -169,7 +196,7 @@ namespace UCNLNav
         public void ProcessBasePoints(IEnumerable<T> basePoints, double depth, DateTime timeStamp)
         {
             double lat_deg, lon_deg, rErr;
-            int it_Cnt;
+            int it_Cnt;            
 
             if (typeof(GeoPoint3DD).IsAssignableFrom(typeof(T)))
             {
@@ -194,9 +221,9 @@ namespace UCNLNav
                 else
                     throw new NullReferenceException("ExternalSolver not defined");
             }
-            
+
             if (rErr < radialErrorThreshold)
-            {
+            {                               
                 crsEstimator.AddPoint(new GeoPoint(lat_deg, lon_deg));
 
                 if (crsEstimator.IsCourse)
@@ -214,6 +241,19 @@ namespace UCNLNav
 
                 TargetLocationUpdatedExHandler.Rise(this,
                     new TargetLocationUpdatedExEventArgs(targetLocation, rErr, crsEstimator.Course_deg, timeStamp));
+
+
+                TBAQuality tbaState = Navigation.GetTBAState(Navigation.GetBasesMaxAngularGapDeg(basePoints, lat_deg, lon_deg));
+
+                DOPState dopState = DOPState.Invalid;
+                double gdop = double.NaN, pdop = double.NaN, hdop = double.NaN, vdop = double.NaN, tdop = double.NaN;
+                if (Navigation.GetDOPs(basePoints, targetLocation, Algorithms.WGS84Ellipsoid, out gdop, out pdop, out hdop, out vdop, out tdop))
+                {
+                    dopState = Navigation.GetDOPState(hdop);
+                }
+
+                BaseQualityUpdatedHandler.Rise(this,
+                    new BaseQualityUpdatedEventArgs(tbaState, gdop, pdop, hdop, vdop, tdop, dopState));
             }
             else
             {
@@ -230,6 +270,7 @@ namespace UCNLNav
         public EventHandler<TargetLocationUpdatedEventArgs> TargetLocationUpdatedHandler;
         public EventHandler<TargetCourseUpdatedEventArgs> TargetCourseUpdatedHandler;
         public EventHandler<TargetLocationUpdatedExEventArgs> TargetLocationUpdatedExHandler;
+        public EventHandler<BaseQualityUpdatedEventArgs> BaseQualityUpdatedHandler;
         public EventHandler RadialErrorExeedsThrehsoldEventHandler;
 
         #endregion

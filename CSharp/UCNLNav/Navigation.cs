@@ -1,11 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
+using UCNLNav.MML;
 
 namespace UCNLNav
 {
-    public static class Navigation
+    public enum DOPState
     {
-        
+        Ideal,
+        Excellent,
+        Good,
+        Moderate,
+        Fair,
+        Poor,
+        Invalid
+    }
+
+    public enum TBAQuality
+    {
+        Good,
+        Fair,
+        Poor,
+        Out_of_base,
+        Invalid
+    }
+
+    public static class Navigation
+    {                
         #region Methods
 
         /// <summary>
@@ -160,6 +180,28 @@ namespace UCNLNav
             return result;
         }
 
+        public static List<MPoint3D> GCSToLCS(IEnumerable<GeoPoint3D> points, Ellipsoid el)
+        {
+            List<MPoint3D> result = new List<MPoint3D>();
+            var centroid = GetPointsCentroid2D(points);
+
+            double cLat = Algorithms.Deg2Rad(centroid.Latitude);
+            double cLon = Algorithms.Deg2Rad(centroid.Longitude);
+            double d_lat_m, d_lon_m;
+
+            foreach (var point in points)
+            {
+                Algorithms.GetDeltasByGeopoints(cLat, cLon,
+                    Algorithms.Deg2Rad(point.Latitude), Algorithms.Deg2Rad(point.Longitude),
+                    el,
+                    out d_lat_m, out d_lon_m);
+
+                result.Add(new MPoint3D(d_lon_m, d_lat_m, point.Depth));
+            }
+
+            return result;
+        }
+
         public static List<GeoPoint> LCSToGCS(IEnumerable<MPoint> points, GeoPoint centroid, Ellipsoid el)
         {
             List<GeoPoint> result = new List<GeoPoint>();
@@ -234,10 +276,161 @@ namespace UCNLNav
             return Math.Sqrt(sigmax * sigmax + sigmay * sigmay + sigmaz * sigmaz);
         }
 
+        #region DOP calculation
 
+        public static Matrix BuildDMatrix(List<MPoint3D> bPoints, MPoint3D tLoc)
+        {
+            Matrix p_m = new Matrix(bPoints.Count, 4);
+            for (int i = 0; i < bPoints.Count; i++)
+            {
+                double r = Algorithms.Dist3D(bPoints[i].X, bPoints[i].Y, bPoints[i].Z, tLoc.X, tLoc.Y, tLoc.Z);
+                p_m[i, 0] = (tLoc.X - bPoints[i].X) / r;
+                p_m[i, 1] = (tLoc.Y - bPoints[i].Y) / r;
+                p_m[i, 2] = (tLoc.Z - bPoints[i].Z) / r;
+                p_m[i, 3] = 1;
+            }
 
-               
+            return Matrix.Inverse_JG(Matrix.Transpose(p_m) * p_m);
+        }
+
+        public static Matrix BuildDMatrix(IEnumerable<GeoPoint3D> bPoints, GeoPoint3D tLoc, Ellipsoid el)
+        {
+            List<MPoint3D> m_bPoints = new List<MPoint3D>();
+            double cLat = Algorithms.Deg2Rad(tLoc.Latitude);
+            double cLon = Algorithms.Deg2Rad(tLoc.Longitude);
+            double d_lat_m, d_lon_m;
+
+            foreach (var point in bPoints)
+            {
+                Algorithms.GetDeltasByGeopoints(cLat, cLon,
+                    Algorithms.Deg2Rad(point.Latitude), Algorithms.Deg2Rad(point.Longitude),
+                    el,
+                    out d_lat_m, out d_lon_m);
+
+                m_bPoints.Add(new MPoint3D(d_lon_m, d_lat_m, point.Depth));
+            }
+
+            Matrix p_m = new Matrix(m_bPoints.Count, 4);
+            for (int i = 0; i < m_bPoints.Count; i++)
+            {
+                double r = Algorithms.Dist3D(m_bPoints[i].X, m_bPoints[i].Y, m_bPoints[i].Z, 0, 0, tLoc.Depth);
+                p_m[i, 0] = -m_bPoints[i].X / r;
+                p_m[i, 1] = -m_bPoints[i].Y / r;
+                p_m[i, 2] = (tLoc.Depth - m_bPoints[i].Z) / r;
+                p_m[i, 3] = 1;
+            }
+
+            return Matrix.Inverse_JG(Matrix.Transpose(p_m) * p_m);
+        }
+
+        public static bool GetDOPs(IEnumerable<GeoPoint3D> bPoints, GeoPoint3D tLoc, Ellipsoid el,
+            out double GDOP, out double PDOP, out double HDOP, out double VDOP, out double TDOP)
+        {
+            var d_m = BuildDMatrix(bPoints, tLoc, el);
+            GDOP = double.NaN;
+            PDOP = double.NaN;
+            HDOP = double.NaN;
+            VDOP = double.NaN;
+            TDOP = double.NaN;
+            bool result = false;
+
+            if (d_m != null)
+            {
+
+                GDOP = Math.Sqrt(d_m[0, 0] + d_m[1, 1] + d_m[2, 2] + d_m[3, 3]);
+                PDOP = Math.Sqrt(d_m[0, 0] + d_m[1, 1] + d_m[2, 2]);
+                HDOP = Math.Sqrt(d_m[0, 0] + d_m[1, 1]);
+                VDOP = Math.Sqrt(d_m[2, 2]);
+                TDOP = Math.Sqrt(d_m[3, 3]);
+                
+                result = true;
+            }
+
+            return result;
+        }
+
+        public static DOPState GetDOPState(double dop)
+        {
+            DOPState result = DOPState.Invalid;
+
+            if (dop < 1.0)
+                result = DOPState.Ideal;
+            else if (dop < 2.0)
+                result = DOPState.Excellent;
+            else if (dop < 5.0)
+                result = DOPState.Good;
+            else if (dop < 10.0)
+                result = DOPState.Moderate;
+            else if (dop < 20.0)
+                result = DOPState.Fair;
+            else
+                result = DOPState.Poor;
+
+            return result;
+        }
         
+        /// <summary>
+        /// TODO: REFACTOR
+        /// </summary>
+        /// <param name="bPoints"></param>
+        /// <param name="lt_deg"></param>
+        /// <param name="ln_deg"></param>
+        /// <returns></returns>
+        public static double GetBasesMaxAngularGapDeg<T>(IEnumerable<T> bPoints, double lt_deg, double ln_deg) where T : GeoPoint
+        {
+            List<double> dangles = new List<double>();
+            double lt_rad = Algorithms.Deg2Rad(lt_deg);
+            double ln_rad = Algorithms.Deg2Rad(ln_deg);
+
+            foreach (var item in bPoints)
+            {
+                dangles.Add(Algorithms.HaversineInitialBearing(lt_rad, ln_rad,
+                    Algorithms.Deg2Rad(item.Latitude), Algorithms.Deg2Rad(item.Longitude)));
+            }
+
+            dangles.Sort();
+
+            double maxGap = 0.0;
+            double gap;
+            for (int i = 1; i <= dangles.Count; i++)
+            {
+                gap = dangles[i % dangles.Count] - dangles[i - 1];
+                if (gap < 0)
+                    gap += Math.PI * 2;
+
+                if (gap > maxGap)
+                    maxGap = gap;
+            }
+
+            return Algorithms.Rad2Deg(maxGap);
+        }
+
+        public static TBAQuality GetTBAState(double maxAngularGap)
+        {
+            TBAQuality result = TBAQuality.Invalid;
+
+            if (maxAngularGap >= 180)
+            {
+                result = TBAQuality.Out_of_base;
+            }
+            else if (maxAngularGap > 160)
+            {
+                result = TBAQuality.Poor;
+            }
+            else if (maxAngularGap > 140)
+            {
+                result = TBAQuality.Fair;
+            }
+            else
+            {
+                result = TBAQuality.Good;
+            }
+
+            return result;
+        }
+
+        #endregion
+
         /// <summary>
         /// Converts array of GeoPoint3DD to an array of TOABasePoints, converts lat/lon to metric local CS whose center is in specified centroid
         /// </summary>
