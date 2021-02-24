@@ -4,6 +4,8 @@ using System.Linq;
 
 namespace UCNLNav
 {
+    #region Custom EventArgs
+
     public class TargetLocationUpdatedEventArgs : EventArgs
     {
         public DateTime TimeStamp { get; private set; }
@@ -81,6 +83,8 @@ namespace UCNLNav
 
         #endregion
     }
+
+    #endregion
 
     public class PCore2D<T> where T : GeoPoint3D
     {
@@ -247,7 +251,9 @@ namespace UCNLNav
 
                 DOPState dopState = DOPState.Invalid;
                 double gdop = double.NaN, pdop = double.NaN, hdop = double.NaN, vdop = double.NaN, tdop = double.NaN;
-                if (Navigation.GetDOPs(basePoints, targetLocation, Algorithms.WGS84Ellipsoid, out gdop, out pdop, out hdop, out vdop, out tdop))
+
+                GeoPoint3D tL = new GeoPoint3D(targetLocation.Latitude, targetLocation.Longitude, depth);
+                if (Navigation.GetDOPs(basePoints, tL, Algorithms.WGS84Ellipsoid, out gdop, out pdop, out hdop, out vdop, out tdop))
                 {
                     dopState = Navigation.GetDOPState(hdop);
                 }
