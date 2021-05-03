@@ -611,7 +611,7 @@ namespace UCNLNav
         /// <param name="itCnt">number of iterations taken</param>
         public static void HJS2D_Solve<T>(Func<T[], double, double, double, double> eps,
                                           T[] baseElements, double xPrev, double yPrev, double z,
-                                          int maxIterations, double precisionThrehsold, double stepSize,
+                                          int maxIterations, double precisionThreshold, double stepSize,
                                           out double xBest, out double yBest, out double radialError, out int itCnt)
         {
             #region Hooke-Jeeves 2D optimization
@@ -626,7 +626,7 @@ namespace UCNLNav
 
             double x1 = x0, y1 = y0, f1 = f0, x2, y2, f2, f1t;
 
-            while (((dx > precisionThrehsold) || (dy > precisionThrehsold)) && (itCnt < maxIterations))
+            while (((dx > precisionThreshold) || (dy > precisionThreshold)) && (itCnt < maxIterations))
             {
                 #region explore around x1
                                               
