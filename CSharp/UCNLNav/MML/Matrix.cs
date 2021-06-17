@@ -56,11 +56,11 @@ namespace UCNLNav.MML
 
             for (int i = 0; i < m1n; i++)
             {
-                for (int j = 0; j < m1m; j++)
+                for (int j = 0; j < m2m; j++)
                 {
                     double sum = 0.0;
 
-                    for (int k = 0; k < m2m; k++)
+                    for (int k = 0; k < m1m; k++)
                     {
                         sum += m1.a[i, k] * m2.a[k, j];
                     }
