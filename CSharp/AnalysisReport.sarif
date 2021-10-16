@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json.schemastore.org/sarif-2.1.0",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Dependency Analysis",
+          "semanticVersion": "0.3.246501",
+          "informationUri": "https://docs.microsoft.com/en-us/dotnet/core/porting/upgrade-assistant-overview",
+          "rules": [
+            {
+              "id": "UA101",
+              "fullDescription": {
+                "text": "Dependency Analysis"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "UA101",
+          "message": {
+            "text": "Package Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers, Version=0.3.246501 needs to be added "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Users/danie/projects/UCNLNav/CSharp/UCNLNav/UCNLNav.csproj"
+                },
+                "region": {}
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "UA101",
+          "message": {
+            "text": "Package Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers, Version=0.3.246501 needs to be added "
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///C:/Users/danie/projects/UCNLNav/CSharp/UCNLNav_Tests/UCNLNav_Tests.csproj"
+                },
+                "region": {}
+              }
+            }
+          ]
+        }
+      ],
+      "columnKind": "utf16CodeUnits"
+    },
+    {
+      "tool": {
+        "driver": {
+          "name": "API Upgradability",
+          "semanticVersion": "0.3.246501",
+          "informationUri": "https://docs.microsoft.com/en-us/dotnet/core/porting/upgrade-assistant-overview"
+        }
+      },
+      "results": [],
+      "columnKind": "utf16CodeUnits"
+    }
+  ]
+}
