@@ -64,7 +64,8 @@ impl Ellipsoid {
 
         let fltn = 1.0 / ifltn;
         let mnsa_m = mjsa_m * (1.0 - fltn);
-        let ecnt = (mjsa_m.powi(2) - mnsa_m.powi(2)) / mjsa_m.powi(2);
+        let ecnt_sq = (mjsa_m.powi(2) - mnsa_m.powi(2)) / mjsa_m.powi(2);
+        let ecnt = ecnt_sq.sqrt();
     
         Ellipsoid {
             mjsa_m,
@@ -72,7 +73,7 @@ impl Ellipsoid {
             fltn,
             mnsa_m,
             ecnt,
-            ecnt_sq: ecnt.powi(2),
+            ecnt_sq,
         }
     }
     /// Builds an Ellipsoid structure from an EllipsoidDescriptor structure
