@@ -20,8 +20,8 @@ namespace UCNLNav
 
             Flattening = 1 / inverseFlattening;
             MinorSemiAxis_m = MajorSemiAxis_m * (1 - Flattening);
-            Eccentricity = ((MajorSemiAxis_m * MajorSemiAxis_m) - (MinorSemiAxis_m * MinorSemiAxis_m)) / (MajorSemiAxis_m * MajorSemiAxis_m);
-            EccentricitySq = Eccentricity * Eccentricity;
+            EccentricitySq = ((MajorSemiAxis_m * MajorSemiAxis_m) - (MinorSemiAxis_m * MinorSemiAxis_m)) / (MajorSemiAxis_m * MajorSemiAxis_m);
+            Eccentricity = Math.Sqrt(EccentricitySq);
         }
     }
 
