@@ -429,7 +429,7 @@ namespace UCNLNav
                     if (cos_sq_alpha != 0)
                         cos_2_sigma_m = cos_sigma - 2 * sin_u_1 * sin_u_2 / cos_sq_alpha;
                     else
-                        cos_sq_alpha = 0;
+                        cos_2_sigma_m = 0;
 
                     c_ = el.Flattening / 16.0 * cos_sq_alpha * (4 + el.Flattening * (4 - 3 * cos_sq_alpha));
                     lambda_ = lambda;
