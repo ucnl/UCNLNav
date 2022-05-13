@@ -44,7 +44,7 @@ function [ dst_m, fwd_az_rad, rev_az_rad, its, is_ok ] = Nav_vincenty_inverse(sp
             if (cos_sq_alpha ~= 0.0)
                 cos_2_sigma_m = cos_sigma - 2.0 * sin_u_1 * sin_u_2 / cos_sq_alpha;            
             else
-                cos_sq_alpha = 0.0;
+                cos_2_sigma_m = 0.0;
             end
 
             c_ = el.fltn / 16.0 * cos_sq_alpha * (4.0 + el.fltn * (4.0 - 3.0 * cos_sq_alpha));
