@@ -503,7 +503,7 @@ pub fn nlm_2d_solve<T>(eps: Eps3dFunc<T>, base_elements: &[T], x_prev: f64, y_pr
                 (fxi[2] - tmp) * (fxi[2] - tmp)) / 3.0;
 
         it_cnt += 1;
-        is_finished = (it_cnt < max_iterations) && (tmp1.sqrt() <= precision_threshold);
+        is_finished = (it_cnt < max_iterations) || (tmp1.sqrt() <= precision_threshold);
     }
 
     //
