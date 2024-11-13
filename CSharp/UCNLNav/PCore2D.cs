@@ -226,7 +226,9 @@ namespace UCNLNav
                     throw new NullReferenceException("ExternalSolver not defined");
             }
 
-            if (rErr < radialErrorThreshold)
+            if ((rErr < radialErrorThreshold) &&
+                (lat_deg >= -90) && (lat_deg <= 90) &&
+                (lon_deg >= -180) && (lon_deg <= 180))
             {                               
                 crsEstimator.AddPoint(new GeoPoint(lat_deg, lon_deg));
 

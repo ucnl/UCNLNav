@@ -91,7 +91,7 @@ namespace UCNLNav
         public static double Wrap(double val, double lim)
         {
             double vl = Math.Abs(val);
-            double sign = Math.Sign(val);
+            double sign = val < 0 ? -1 : 1;
 
             while (vl > lim)
                 vl -= lim;
@@ -450,7 +450,6 @@ namespace UCNLNav
             double delta_sigma = b_ * sin_sigma * (cos_2_sigma_m + b_ / 4 * (cos_sigma * (-1 + 2 * cos_2_sigma_m * cos_2_sigma_m) -
                 b_ / 6 * cos_2_sigma_m * (-3 + 4 * sin_sigma * sin_sigma) * (-3 + 4 * cos_2_sigma_m * cos_2_sigma_m)));
 
-
             dst_m = el.MinorSemiAxis_m * a_ * (sigma - delta_sigma);
 
             fwd_az_rad = Math.Atan2(cos_u_2 * sin_lambda, cos_u_1 * sin_u_2 - sin_u_1 * cos_u_2 * cos_lambda);
@@ -611,7 +610,7 @@ namespace UCNLNav
         /// <param name="itCnt">number of iterations taken</param>
         public static void HJS2D_Solve<T>(Func<T[], double, double, double, double> eps,
                                           T[] baseElements, double xPrev, double yPrev, double z,
-                                          int maxIterations, double precisionThreshold, double stepSize,
+                                          int maxIterations, double precisionThrehsold, double stepSize,
                                           out double xBest, out double yBest, out double radialError, out int itCnt)
         {
             #region Hooke-Jeeves 2D optimization
@@ -626,7 +625,7 @@ namespace UCNLNav
 
             double x1 = x0, y1 = y0, f1 = f0, x2, y2, f2, f1t;
 
-            while (((dx > precisionThreshold) || (dy > precisionThreshold)) && (itCnt < maxIterations))
+            while (((dx > precisionThrehsold) || (dy > precisionThrehsold)) && (itCnt < maxIterations))
             {
                 #region explore around x1
                                               
@@ -1311,8 +1310,212 @@ namespace UCNLNav
             radialError = Math.Sqrt(eps(baseElements, xBest, yBest, zBest));
         }
 
+        public static void NLM4D_Solve<T>(Func<T[], double, double, double, double, double> eps,
+                                          T[] baseElements, double p1prev, double p2prev, double p3prev, double p4prev,
+                                          int maxIterations, double precisionThreshold, double simplexSize,
+                                          out double p1Best, out double p2Best, out double p3Best, out double p4Best, out double radialError, out int itCnt)
+        {
+            #region Nelder-Mead 4D optimization
+
+            int v_num = 5; // vertices number is 5 for 4D-task
+
+            double[] xip1 = new double[v_num];
+            double[] xip2 = new double[v_num];
+            double[] xip3 = new double[v_num];
+            double[] xip4 = new double[v_num];
+            double[] fxi  = new double[v_num];
+
+            bool isFinished = false;
+            double sigma, mean, tmp;
+            double xrp1, xrp2, xrp3, xrp4;
+            double x0p1, x0p2, x0p3, x0p4;
+            double xep1, xep2, xep3, xep4;
+            double xcp1, xcp2, xcp3, xcp4;
+            double fc, fr, fe;
+            itCnt = 0;
+
+            #region Simplex initialization
+
+            xip1[0] = p1prev;
+            xip2[0] = p2prev;
+            xip3[0] = p3prev;
+            xip4[0] = p4prev;
+
+            xip1[1] = xip1[0] + simplexSize;
+            xip2[1] = xip2[0] + simplexSize;
+            xip3[1] = xip3[0] - simplexSize;
+            xip4[1] = xip4[0] - simplexSize;
+
+            xip1[2] = xip1[0] - simplexSize / 2;
+            xip2[2] = xip2[0] + simplexSize / 2;
+            xip3[2] = xip3[0] + simplexSize / 2;
+            xip4[2] = xip4[0] - simplexSize / 2;
+
+            xip1[3] = xip1[0] + simplexSize / 2;
+            xip2[3] = xip2[0] - simplexSize / 2;
+            xip3[3] = xip3[0] - simplexSize / 2;
+            xip4[3] = xip4[0] + simplexSize / 2;
+
+            xip1[4] = xip1[0] - simplexSize / 2;
+            xip2[4] = xip2[0] - simplexSize / 2;
+            xip3[4] = xip3[0] + simplexSize / 2;
+            xip4[4] = xip4[0] + simplexSize / 2;
+
+            #endregion            
+
+            while (!isFinished)
+            {
+                for (int i = 0; i < v_num; i++)                
+                    fxi[i] = eps(baseElements, xip1[i], xip2[i], xip3[i], xip4[i]);                
+
+                mean = (fxi[0] + fxi[1] + fxi[2] + fxi[3] + fxi[4]) / v_num;
+
+                sigma = Math.Sqrt(((fxi[0] - mean) * (fxi[0] - mean) +
+                                   (fxi[1] - mean) * (fxi[1] - mean) +
+                                   (fxi[2] - mean) * (fxi[2] - mean) +
+                                   (fxi[3] - mean) * (fxi[3] - mean) +
+                                   (fxi[4] - mean) * (fxi[4] - mean)) / v_num);
+
+                isFinished = (++itCnt > maxIterations) || (sigma < precisionThreshold);
+
+
+                if (!isFinished)
+                {
+                    // Sort vertices
+
+                    #region sort vetices 
+
+                    for (int i = 0; i < v_num - 1; i++)
+                    {
+                        int jmin = i;
+                        for (int j = i + 1; j < v_num; j++)
+                        {
+                            if (fxi[j] < fxi[jmin])
+                                jmin = j;
+                        }
+
+                        if (jmin != i)
+                        {
+                            tmp = fxi[i];   fxi[i] = fxi[jmin];   fxi[jmin] = tmp;
+                            tmp = xip1[i]; xip1[i] = xip1[jmin]; xip1[jmin] = tmp;
+                            tmp = xip2[i]; xip2[i] = xip2[jmin]; xip2[jmin] = tmp;
+                            tmp = xip3[i]; xip3[i] = xip3[jmin]; xip3[jmin] = tmp;
+                            tmp = xip4[i]; xip4[i] = xip4[jmin]; xip4[jmin] = tmp;
+                        }
+                    }                    
+
+                    #endregion
+
+                    // (2) Calculate x0, the centroid of all points except xn+1
+
+                    x0p1 = (xip1[0] + xip1[1] + xip1[2] + xip1[3]) / 4;
+                    x0p2 = (xip2[0] + xip2[1] + xip2[2] + xip2[3]) / 4;
+                    x0p3 = (xip3[0] + xip3[1] + xip3[2] + xip3[3]) / 4;
+                    x0p4 = (xip3[0] + xip3[1] + xip3[2] + xip3[3]) / 4;
+
+                    // (3) reflect the xh (xi(4)) point to xr
+                    xrp1 = x0p1 + NLM_A * (x0p1 - xip1[4]);
+                    xrp2 = x0p2 + NLM_A * (x0p2 - xip2[4]);
+                    xrp3 = x0p3 + NLM_A * (x0p3 - xip3[4]);
+                    xrp4 = x0p4 + NLM_A * (x0p4 - xip4[4]);
+
+                    // function value in the xr point                    
+                    fr = eps(baseElements, xrp1, xrp2, xrp3, xrp4);
+
+                    // if fx1 <= fxr <= fxn replace worst point xn+1 with xr
+                    if ((fr >= fxi[0]) && (fxi[3] >= fr))
+                    {
+                        xip1[4] = xrp1;
+                        xip2[4] = xrp2;
+                        xip3[4] = xrp3;
+                        xip4[4] = xrp4;
+                        fxi[4] = fr;
+                    }
+                    else
+                    {
+                        // (4) expansion
+                        if (fr < fxi[0])
+                        {
+                            xep1 = x0p1 + NLM_G * (xrp1 - x0p1);
+                            xep2 = x0p2 + NLM_G * (xrp2 - x0p2);
+                            xep3 = x0p3 + NLM_G * (xrp3 - x0p3);
+                            xep4 = x0p4 + NLM_G * (xrp4 - x0p4);
+                            fe = eps(baseElements, xep1, xep2, xep3, xrp4);
+
+                            if (fe < fr)
+                            {
+                                xip1[4] = xep1;
+                                xip2[4] = xep2;
+                                xip3[4] = xep3;
+                                xip4[4] = xep4;
+                                fxi[4] = fe;
+                                // % to step 1
+                            }
+                            else
+                            {
+                                xip1[4] = xrp1;
+                                xip2[4] = xrp2;
+                                xip3[4] = xrp3;
+                                xip4[4] = xrp4;
+                                fxi[4] = fr;
+                                // % to step 1
+                            }
+                        }
+                        else
+                        {
+                            xcp1 = x0p1 + NLM_R * (xip1[4] - x0p1);
+                            xcp2 = x0p2 + NLM_R * (xip2[4] - x0p2);
+                            xcp3 = x0p3 + NLM_R * (xip3[4] - x0p3);
+                            xcp4 = x0p4 + NLM_R * (xip4[4] - x0p4);
+                            fc = eps(baseElements, xcp1, xcp2, xcp3, xcp4);
+
+                            if (fc < fxi[4])
+                            {
+                                xip1[4] = xcp1;
+                                xip2[4] = xcp2;
+                                xip3[4] = xcp3;
+                                xip4[4] = xcp4;
+                                fxi[4] = fc;
+                                // % to step 1
+                            }
+                            else
+                            {
+                                xip1[1] = xip1[0] + NLM_Q * (xip1[1] - xip1[0]);
+                                xip2[1] = xip2[0] + NLM_Q * (xip2[1] - xip2[0]);
+                                xip3[1] = xip3[0] + NLM_Q * (xip3[1] - xip3[0]);
+                                xip4[1] = xip4[0] + NLM_Q * (xip4[1] - xip4[0]);
+
+                                xip1[2] = xip1[0] + NLM_Q * (xip1[2] - xip1[0]);
+                                xip2[2] = xip2[0] + NLM_Q * (xip2[2] - xip2[0]);
+                                xip3[2] = xip3[0] + NLM_Q * (xip3[2] - xip3[0]);
+                                xip4[2] = xip4[0] + NLM_Q * (xip4[2] - xip4[0]);
+
+                                xip1[3] = xip1[0] + NLM_Q * (xip1[3] - xip1[0]);
+                                xip2[3] = xip2[0] + NLM_Q * (xip2[3] - xip2[0]);
+                                xip3[3] = xip3[0] + NLM_Q * (xip3[3] - xip3[0]);
+                                xip4[3] = xip4[0] + NLM_Q * (xip4[3] - xip4[0]);
+
+                                xip1[4] = xip1[0] + NLM_Q * (xip1[4] - xip1[0]);
+                                xip2[4] = xip2[0] + NLM_Q * (xip2[4] - xip2[0]);
+                                xip3[4] = xip3[0] + NLM_Q * (xip3[4] - xip3[0]);
+                                xip4[4] = xip4[0] + NLM_Q * (xip4[4] - xip4[0]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            #endregion
+
+            p1Best = xip1[0];
+            p2Best = xip2[0];
+            p3Best = xip3[0];
+            p4Best = xip4[0];
+            radialError = Math.Sqrt(eps(baseElements, p1Best, p2Best, p3Best, p4Best));
+        }
+        
         #endregion
-       
+
         /// <summary>
         /// Solves navigation problem: finds target location by TOA (by base points with known location and distances to them)
         /// with Nelder-Mead (simplex) algorithm. 2D problem (x and y are variables, z is supposed to be known by direct measurement)

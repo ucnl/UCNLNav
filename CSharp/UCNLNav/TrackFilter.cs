@@ -9,6 +9,11 @@ namespace UCNLNav
 
         public int FilterSize { get; private set; }
 
+        public bool IsEmpty
+        {
+            get { return points.Count == 0; }
+        }
+
         List<MPoint> points;
 
         double anchor_lat_rad = double.NaN;
