@@ -10,6 +10,23 @@ namespace UCNLNav_Tests
     {
         static void Main(string[] args)
         {
+            //
+
+            int len = 4;
+
+            for (int i = 0; i < len - 1; i++)
+                for (int j = i + 1; j < len; j++)
+                {
+                    Console.WriteLine(string.Format("i = {0}, j = {1}", i, j));
+                }
+
+            Console.ReadLine();
+
+            //
+
+
+
+
             int bases_number = 4;  // number of base points
             double start_bases_z = 1.5;  // initial z-coordinate of base points
             double base_z_step = 5; // base z-coordinate step
@@ -444,10 +461,31 @@ namespace UCNLNav_Tests
                 }                
             }
 
-
             Console.WriteLine(string.Format("AOA baseline size: {0:F03} m", aoa_base_size_m));
             Console.WriteLine(string.Format("AOA mean distance to target: {0:F03} m", aoa_target_range_m));
             Console.WriteLine(string.Format("AOA Full circle maximal error: {0:F06}°", aoa_max_error));
+
+
+            //
+            Console.WriteLine();
+            Console.WriteLine("\r\nPress a key to start GetDOPs tests...");
+            Console.ReadKey();
+
+            List<MPoint3D> bPoints = new List<MPoint3D>();
+            bPoints.Add(new MPoint3D(15524471.175, -16649826.222, 13512272.387));
+            bPoints.Add(new MPoint3D(-2304058.534, -23287906.465, 11917038.105));
+            bPoints.Add(new MPoint3D(16680243.357, -3069625.561, 20378551.047));
+            bPoints.Add(new MPoint3D(-14799931.395, -21425358.24, 6069947.224));
+
+            MPoint3D tLoc = new MPoint3D(-730000, -5440000, 3230000);
+
+            var d_mat = Navigation.BuildDMatrix(bPoints, tLoc);
+
+            double gdop = Math.Sqrt(d_mat[0, 0] + d_mat[1, 1] + d_mat[2, 2] + d_mat[3, 3]);
+
+            Console.WriteLine(string.Format("Esimated GDOP: {0:F03}, Expected GDOP: 6.806", gdop));
+
+
 
 
             Console.WriteLine();
