@@ -1,0 +1,52 @@
+name: Mirror to GitVerse
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["**"]
+  delete:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitverse-mirror-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mirror branches + tags to GitVerse
+        env:
+          GH_REPO: ${{ github.repository }}     # org/repo
+          GH_TOKEN: ${{ github.token }}        # встроенный токен GitHub Actions
+          GV_TOKEN: ${{ secrets.GH_SYNC }}     # <-- ваш секрет (токен GitVerse)
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${GV_TOKEN:-}" ]]; then
+            echo "ERROR: missing secret GH_SYNC"
+            exit 1
+          fi
+
+          SRC="https://x-access-token:${GH_TOKEN}@github.com/${GH_REPO}.git"
+          DST="https://${GV_TOKEN}@gitverse.ru/${GH_REPO}.git"
+
+          git init --bare repo.git
+          cd repo.git
+
+          git remote add origin "$SRC"
+
+          # Забираем только ветки и теги (без служебных refs), с прунингом удалений
+          git fetch --prune --prune-tags origin \
+            "+refs/heads/*:refs/heads/*" \
+            "+refs/tags/*:refs/tags/*"
+
+          git remote add gitverse "$DST"
+
+          # Пушим только ветки и теги, удалённые в GitHub — удаляем и на GitVerse
+          git push --prune gitverse \
+            "+refs/heads/*:refs/heads/*" \
+            "+refs/tags/*:refs/tags/*"
