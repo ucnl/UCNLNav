@@ -1,0 +1,18 @@
+# Локальные настройки
+*.local.props
+*.user
+*.suo
+*.userosscache
+*.cache
+
+# Папки с пакетами
+packages/
+NuGetLocal/
+
+# Результаты сборки
+bin/
+obj/
+
+# Настройки IDE
+.vs/
+.idea/
