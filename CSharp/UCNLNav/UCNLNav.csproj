@@ -6,6 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>UCNLNav</RootNamespace>
     <AssemblyName>UCNLNav</AssemblyName>
+	<PackageId>$(MSBuildProjectName)</PackageId>
+	<Description>UCNL $(MSBuildProjectName) library</Description>
+	<PackageTags>UCNL;$(MSBuildProjectName)</PackageTags>
+	<Version>1.0.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 </Project>

@@ -1,10 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
-using UCNLNav;
-using UCNLNav.VLBL;
-
-namespace UCNLNav_Tests
+﻿namespace UCNLNav_Tests
 {
     class Program
     {

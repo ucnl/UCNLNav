@@ -1,12 +1,26 @@
 ﻿using System;
+using System.Numerics;
 using System.Text;
 
 namespace UCNLNav
 {
     public interface IAging
     {
-        bool IsInitialized { get; }
+        bool IsInitialized { get; }        
+
         bool IsObsolete { get; }
+
+        bool IsInitializedAndNotObsolete { get; }
+
+        string AccessTag { get; set; }
+
+        bool IgnoreAge { get; set; }
+
+        TimeSpan Age { get; }
+
+        void ForceUpdate();
+        
+        string Name { get; set; }
     }
 
     
@@ -30,6 +44,10 @@ namespace UCNLNav
         }
 
         public string AccessTag { get; set; }
+
+        public bool IgnoreAge { get; set; }
+
+        public string Name { get; set; }
 
         public bool IsInitialized { get; private set; }
 
@@ -71,10 +89,12 @@ namespace UCNLNav
 
         #region Constructor
 
-        public AgingValue(int minTimeToShowAgeSec, int obsoleteIntervalSec, Func<T, string> customFormatter)
+        public AgingValue(int minTimeToShowAgeSec, int obsoleteIntervalSec, Func<T, string> customFormatter, string name)
         {
             if (customFormatter == null)
                 throw new ArgumentNullException("customFormatter");
+
+            Name = name;
 
             IsInitialized = false;
             MinSecToShowAge = minTimeToShowAgeSec;
@@ -82,8 +102,14 @@ namespace UCNLNav
             CustomFormatter = customFormatter;
         }
 
+        public AgingValue(int minTimeToShowAgeSec, int obsoleteIntervalSec, Func<T, string> customFormatter) 
+            : this(minTimeToShowAgeSec, obsoleteIntervalSec, customFormatter, string.Empty)
+        {
+
+        }
+
         public AgingValue()
-            : this(DefaultMinSecToShowAge, DefaultObsoleteIntervalSec, ((v) => { return v.ToString(); }))
+            : this(DefaultMinSecToShowAge, DefaultObsoleteIntervalSec, (v) => { return v.ToString(); }, string.Empty)
         {
         }
 
@@ -118,6 +144,11 @@ namespace UCNLNav
 
                 return sb.ToString();
             }
+        }
+
+        public void DeInit()
+        {
+            IsInitialized = false;
         }
 
         #endregion
