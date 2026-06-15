@@ -1,7 +1,9 @@
 ## Latest news:
+- JUN-2026
+  - UTM coordinates support class
+  
 - 21-JAN-2021
   - DOP calculation routines added (C#)
-  
 - 19-AUG-2020 
   - Angle-of-arrival routines added (C#/Rust/Matlab)
   - Hooke-Jeeves algorithm added in Matlab version for TOA/TDOA problems
