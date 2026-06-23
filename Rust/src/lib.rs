@@ -113,15 +113,7 @@ pub fn wrap(value: f64, bound: f64) -> f64 {
     if bound <= 0.0 {
         panic!("Specified 'bound' value should be greater than zero");
     }
-
-    let mut vl = value.abs();
-    let sign = value.signum();
-
-    while vl > bound {
-        vl -= bound;
-    }
-
-    (vl * sign)
+    value % bound
 }
 
 /// Wraps specified 'valuee' around 2pi
@@ -274,7 +266,7 @@ pub fn vincenty_inverse(sp_lat_rad: f64, sp_lon_rad: f64, ep_lat_rad: f64, ep_lo
         }
             
         its += 1;
-        (((lambda - lambda_).abs() > eps) && (its < it_limit) && (it_check < consts::PI))
+        ((lambda - lambda_).abs() > eps) && (its < it_limit) && (it_check < consts::PI)
     } { }
 
 
