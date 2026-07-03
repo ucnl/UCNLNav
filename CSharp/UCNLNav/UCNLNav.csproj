@@ -9,7 +9,7 @@
 	<PackageId>$(MSBuildProjectName)</PackageId>
 	<Description>UCNL $(MSBuildProjectName) library</Description>
 	<PackageTags>UCNL;$(MSBuildProjectName)</PackageTags>
-	<Version>1.0.1</Version>
+	<Version>1.0.3</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 </Project>
